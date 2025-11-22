@@ -258,11 +258,21 @@ const App: React.FC = () => {
                </div>
                <div className="flex flex-col gap-2 w-full max-w-md">
                  {loadingStatus === 'fetching-data' ? (
-                   <>
-                     <div className="h-4 bg-gray-800 rounded w-3/4 animate-pulse"></div>
-                     <div className="h-4 bg-gray-800 rounded w-1/2 animate-pulse"></div>
-                     <div className="h-64 bg-gray-800 rounded-xl w-full animate-pulse mt-2"></div>
-                   </>
+                   <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl max-w-fit">
+                             <div className="relative flex h-3 w-3 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-blue-200 text-sm font-medium flex items-center gap-2">
+                                    Market Data Agent
+                                    <Activity className="w-3 h-3 text-blue-400" />
+                                </span>
+                                <span className="text-blue-300/70 text-xs">Gathering live price, tokenomics, and sentiment data...</span>
+                              </div>
+                        </div>
+                   </div>
                  ) : (
                     <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         {/* Analysis Agent UI */}
