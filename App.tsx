@@ -1,8 +1,81 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Mic, Sparkles, Menu, Plus } from 'lucide-react';
+import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity } from 'lucide-react';
 import { ChatMessage, CryptoData } from './types';
 import { analyzeCoin, generateMarketReport } from './services/geminiService';
 import CryptoDashboard from './components/CryptoDashboard';
+
+// --- Markdown Rendering Components ---
+
+const InlineFormat = ({ text }: { text: string }) => {
+  // Simple regex to parse **bold** text
+  const parts = text.split(/(\*\*.*?\*\*)/);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i} className="font-bold text-blue-200">{part.slice(2, -2)}</strong>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+};
+
+const FormattedMessage = ({ text }: { text: string }) => {
+  const lines = text.split('\n');
+  
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        
+        // Header 3 (### Title)
+        if (line.startsWith('### ')) {
+          return (
+            <h3 key={i} className="text-lg font-bold text-blue-400 mt-5 mb-2">
+              <InlineFormat text={line.replace('### ', '')} />
+            </h3>
+          );
+        }
+        
+        // Header 2 or 1 treated similarly for safety, though prompt asks for structure
+        if (line.startsWith('## ')) {
+            return (
+              <h2 key={i} className="text-xl font-bold text-blue-300 mt-6 mb-3">
+                <InlineFormat text={line.replace('## ', '')} />
+              </h2>
+            );
+        }
+
+        // Bullet points
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          return (
+            <div key={i} className="flex gap-3 ml-1 mb-1">
+              <span className="text-blue-400/80 mt-1.5 text-[10px] font-bold">●</span>
+              <p className="text-gray-200 leading-relaxed">
+                <InlineFormat text={trimmed.replace(/^[-*] /, '')} />
+              </p>
+            </div>
+          );
+        }
+
+        // Empty lines for spacing
+        if (!trimmed) {
+          return <div key={i} className="h-3" />;
+        }
+
+        // Standard Paragraph
+        return (
+          <p key={i} className="text-gray-200 leading-relaxed mb-1">
+            <InlineFormat text={line} />
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
+// --- Main App Component ---
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
@@ -54,8 +127,8 @@ const App: React.FC = () => {
       // Step 2: Trigger the Analysis Agent
       setLoadingStatus('analyzing');
       
-      // Small delay to smooth the UX transition (optional, but feels better)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Small delay to smooth the UX transition and let the user see the agent "thinking"
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       const reportText = await generateMarketReport(data);
       
@@ -135,7 +208,7 @@ const App: React.FC = () => {
 
         {/* Chat History */}
         <div 
-          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-40 scroll-smooth"
+          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth"
           ref={scrollRef}
         >
           {messages.map((msg) => (
@@ -156,12 +229,16 @@ const App: React.FC = () => {
               {/* Message Content */}
               <div className={`flex flex-col max-w-[90%] md:max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 {msg.text && (
-                  <div className={`px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm whitespace-pre-wrap ${
+                  <div className={`px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
                     msg.role === 'user' 
-                      ? 'bg-[#2d2e2f] text-white rounded-tr-none' 
-                      : 'text-gray-100'
+                      ? 'bg-[#2d2e2f] text-white rounded-tr-none whitespace-pre-wrap' 
+                      : 'text-gray-100 w-full'
                   }`}>
-                    {msg.text}
+                    {msg.role === 'user' ? (
+                      msg.text
+                    ) : (
+                      <FormattedMessage text={msg.text} />
+                    )}
                   </div>
                 )}
                 
@@ -176,8 +253,8 @@ const App: React.FC = () => {
 
           {isLoading && (
             <div className="flex gap-4 animate-fade-in">
-               <div className="w-10 h-10 flex items-center justify-center shrink-0 mt-1">
-                  <Sparkles className="w-6 h-6 text-blue-400 animate-spin-slow" />
+               <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center shrink-0 mt-1">
+                  <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
                </div>
                <div className="flex flex-col gap-2 w-full max-w-md">
                  {loadingStatus === 'fetching-data' ? (
@@ -187,13 +264,29 @@ const App: React.FC = () => {
                      <div className="h-64 bg-gray-800 rounded-xl w-full animate-pulse mt-2"></div>
                    </>
                  ) : (
-                    <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
-                      <span className="animate-pulse">Analyzing charts and generating report...</span>
+                    <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        {/* Analysis Agent UI */}
+                        <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl max-w-fit">
+                             <div className="relative flex h-3 w-3 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-blue-200 text-sm font-medium flex items-center gap-2">
+                                    Analysis Agent Active
+                                    <Activity className="w-3 h-3 text-blue-400" />
+                                </span>
+                                <span className="text-blue-300/70 text-xs">Reading chart metrics & generating insights...</span>
+                              </div>
+                        </div>
                     </div>
                  )}
                </div>
             </div>
           )}
+          
+          {/* Spacer div to prevent input bar from covering the last message */}
+          <div className="w-full h-48 shrink-0" />
         </div>
 
         {/* Input Area */}

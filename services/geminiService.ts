@@ -148,19 +148,23 @@ export const generateMarketReport = async (data: CryptoData): Promise<string> =>
       contents: `Act as a senior cryptocurrency market analyst. 
       
       I will provide you with a dataset for the coin '${data.coinName}'. 
-      This data includes Price Action, Tokenomics, Sentiment (Fear & Greed), Long/Short Ratios, and Project Scores.
+      This data corresponds to the charts currently displayed to the user:
+      1. Price Action (7D)
+      2. Tokenomics (Distribution)
+      3. Market Sentiment (Gauge)
+      4. Long/Short Ratio
+      5. Project Score (Radar)
       
-      Your task is to write a professional, insightful "Deep Dive Analysis" report based strictly on this data.
+      Your task is to "read" these metrics and write a professional "Deep Dive Analysis".
       
       Dataset:
       ${dataString}
       
       Guidelines:
-      1. Use bolding for key metrics.
-      2. Structure the report with clear sections (e.g., "Market Sentiment", "Technical Outlook", "Fundamental Strength").
-      3. Provide a final "Verdict" or "Outlook" (Bullish/Bearish/Neutral) based on the synthesis of the Project Scores and Sentiment.
-      4. Keep the tone professional, objective, yet engaging.
-      5. Do not mention that this is "generated data", treat it as the current reality.
+      - Explicitly reference the specific charts/metrics in your analysis (e.g., "Looking at the Tokenomics distribution...", "The Sentiment gauge is currently showing...").
+      - Use bolding for key insights.
+      - Structure: "Market Sentiment", "On-Chain Data", "Project Health", "Verdict".
+      - Keep it professional and insightful.
       `,
     });
 
