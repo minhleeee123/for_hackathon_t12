@@ -1,0 +1,237 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User, Mic, Sparkles, Menu, Plus } from 'lucide-react';
+import { ChatMessage, CryptoData } from './types';
+import { analyzeCoin, generateMarketReport } from './services/geminiService';
+import CryptoDashboard from './components/CryptoDashboard';
+
+const App: React.FC = () => {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { 
+      id: 'welcome', 
+      role: 'model', 
+      text: 'Hello! I am CryptoInsight AI. Ask me about any coin (e.g., "Analyze Solana") and I will generate comprehensive charts and data for you.' 
+    }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState<string>(''); // 'fetching-data' | 'analyzing' | ''
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isLoading, loadingStatus]);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      text: input
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setIsLoading(true);
+    setLoadingStatus('fetching-data');
+
+    try {
+      // Step 1: Fetch the Data (Charts)
+      const coinName = input; 
+      const data: CryptoData = await analyzeCoin(coinName);
+
+      const chartMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        data: data
+      };
+
+      // Show charts immediately
+      setMessages(prev => [...prev, chartMsg]);
+      
+      // Step 2: Trigger the Analysis Agent
+      setLoadingStatus('analyzing');
+      
+      // Small delay to smooth the UX transition (optional, but feels better)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const reportText = await generateMarketReport(data);
+      
+      const textMsg: ChatMessage = {
+        id: (Date.now() + 2).toString(),
+        role: 'model',
+        text: reportText
+      };
+
+      setMessages(prev => [...prev, textMsg]);
+
+    } catch (error) {
+      const errorMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: "I'm sorry, I encountered an error fetching data for that coin. Please try again."
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsLoading(false);
+      setLoadingStatus('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="flex h-screen w-full bg-gemini-bg text-gemini-text overflow-hidden font-sans selection:bg-blue-500/30">
+      
+      {/* Sidebar (Visual only for Gemini look) */}
+      <div className="hidden md:flex flex-col w-[260px] h-full bg-[#1e1f20] p-4 gap-4 shrink-0">
+        <div className="flex items-center gap-2 px-2 py-3 cursor-pointer hover:bg-white/5 rounded-lg transition-colors">
+          <Menu className="w-5 h-5 text-gray-400" />
+          <span className="font-medium text-gray-300">Menu</span>
+        </div>
+        
+        <button 
+          className="flex items-center gap-3 bg-[#2d2e2f] hover:bg-[#37393b] text-gray-200 px-4 py-3 rounded-full transition-all w-fit mb-4 shadow-lg"
+          onClick={() => setMessages([{ id: 'reset', role: 'model', text: 'Ready for a new analysis.' }])}
+        >
+           <Plus className="w-4 h-4" />
+           <span className="text-sm font-medium">New Chat</span>
+        </button>
+
+        <div className="flex-1 overflow-y-auto space-y-2">
+          <div className="px-3 text-xs font-medium text-gray-500 mb-2">Recent</div>
+          <div className="px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg cursor-pointer truncate">Bitcoin Analysis</div>
+          <div className="px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg cursor-pointer truncate">Ethereum Sentiment</div>
+        </div>
+
+        <div className="mt-auto px-2 py-2">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            San Francisco, CA
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col relative h-full max-w-5xl mx-auto w-full">
+        
+        {/* Top Bar */}
+        <div className="flex items-center justify-between p-4 md:p-6 sticky top-0 z-10 bg-gemini-bg/80 backdrop-blur-md">
+          <div className="flex items-center gap-2">
+             <span className="text-xl font-semibold text-gray-200">Gemini Crypto</span>
+             <span className="px-2 py-0.5 bg-blue-900/30 text-blue-400 text-xs rounded-md border border-blue-800/50">2.5 Flash</span>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-400">
+            <User className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Chat History */}
+        <div 
+          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-40 scroll-smooth"
+          ref={scrollRef}
+        >
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+              
+              {/* Avatar */}
+              <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.role === 'model' ? 'bg-transparent' : 'bg-gray-700'}`}>
+                 {msg.role === 'model' ? (
+                   <div className="relative">
+                      <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
+                      <div className="absolute inset-0 bg-blue-400/20 blur-lg rounded-full"></div>
+                   </div>
+                 ) : (
+                   <User className="w-5 h-5 text-white" />
+                 )}
+              </div>
+
+              {/* Message Content */}
+              <div className={`flex flex-col max-w-[90%] md:max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                {msg.text && (
+                  <div className={`px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm whitespace-pre-wrap ${
+                    msg.role === 'user' 
+                      ? 'bg-[#2d2e2f] text-white rounded-tr-none' 
+                      : 'text-gray-100'
+                  }`}>
+                    {msg.text}
+                  </div>
+                )}
+                
+                {msg.data && (
+                  <div className="w-full mt-2">
+                    <CryptoDashboard data={msg.data} />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {isLoading && (
+            <div className="flex gap-4 animate-fade-in">
+               <div className="w-10 h-10 flex items-center justify-center shrink-0 mt-1">
+                  <Sparkles className="w-6 h-6 text-blue-400 animate-spin-slow" />
+               </div>
+               <div className="flex flex-col gap-2 w-full max-w-md">
+                 {loadingStatus === 'fetching-data' ? (
+                   <>
+                     <div className="h-4 bg-gray-800 rounded w-3/4 animate-pulse"></div>
+                     <div className="h-4 bg-gray-800 rounded w-1/2 animate-pulse"></div>
+                     <div className="h-64 bg-gray-800 rounded-xl w-full animate-pulse mt-2"></div>
+                   </>
+                 ) : (
+                    <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
+                      <span className="animate-pulse">Analyzing charts and generating report...</span>
+                    </div>
+                 )}
+               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gemini-bg via-gemini-bg to-transparent pt-10 pb-6 px-4 md:px-8 flex justify-center">
+          <div className="w-full max-w-3xl bg-[#1e1f20] rounded-full flex items-center p-2 pl-6 shadow-2xl border border-white/5 ring-1 ring-white/5 focus-within:ring-blue-500/50 transition-all">
+             <input 
+               type="text" 
+               value={input}
+               onChange={(e) => setInput(e.target.value)}
+               onKeyDown={handleKeyDown}
+               placeholder="Ask about a coin (e.g., Bitcoin, ETH)..."
+               className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 h-10"
+               disabled={isLoading}
+             />
+             
+             <div className="flex items-center gap-1 px-2">
+                <button className="p-2 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
+                  <Mic className="w-5 h-5" />
+                </button>
+                {input.trim() && (
+                  <button 
+                    onClick={handleSend}
+                    className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full text-white transition-all shadow-lg shadow-blue-900/20"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                )}
+             </div>
+          </div>
+          
+          <div className="absolute bottom-2 text-[10px] text-gray-600 font-medium text-center w-full pointer-events-none">
+            Gemini can make mistakes, including about people, so double-check it.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default App;
