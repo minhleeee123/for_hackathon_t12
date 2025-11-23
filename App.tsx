@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart, RefreshCw, Link2 } from 'lucide-react';
+import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart, RefreshCw, Link2, X } from 'lucide-react';
 import { ChatMessage, CryptoData, ChatSession, PortfolioItem } from './types';
 import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio, updatePortfolioRealTime } from './services/geminiService';
 import { connectToMetaMask, formatAddress } from './services/web3Service';
@@ -100,10 +100,11 @@ interface ProfileProps {
     onBack: () => void;
     onRefreshPrices: () => Promise<void>;
     onConnectWallet: () => Promise<void>;
+    onDisconnectWallet: () => void;
     isRefreshing: boolean;
 }
 
-const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, onConnectWallet, isRefreshing }) => {
+const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, onConnectWallet, onDisconnectWallet, isRefreshing }) => {
   
   // Auto refresh when mounting profile view
   useEffect(() => {
@@ -149,8 +150,15 @@ const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, on
             <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-start">
                 <h2 className="text-2xl font-bold text-white">{user.name}</h2>
                 {user.walletAddress ? (
-                    <span className="px-3 py-1 bg-green-500/10 text-green-400 text-xs rounded-full border border-green-500/20 font-mono">
+                    <span className="px-3 py-1 bg-green-500/10 text-green-400 text-xs rounded-full border border-green-500/20 font-mono flex items-center gap-2 mx-auto md:mx-0">
                         {formatAddress(user.walletAddress)}
+                        <button 
+                            onClick={onDisconnectWallet}
+                            className="hover:text-white hover:bg-green-500/20 rounded-full p-0.5 transition-colors"
+                            title="Disconnect Wallet"
+                        >
+                            <X className="w-3 h-3" />
+                        </button>
                     </span>
                 ) : (
                     <button 
@@ -360,6 +368,15 @@ const App: React.FC = () => {
             };
         });
     }
+  };
+
+  const handleDisconnectWallet = () => {
+    setUserProfile(prev => ({
+      ...prev,
+      walletAddress: null,
+      // Remove the entry that was added by the wallet connection
+      portfolio: prev.portfolio.filter(p => !p.name.includes("(Wallet)"))
+    }));
   };
 
   const handleNewChat = () => {
@@ -669,6 +686,7 @@ const App: React.FC = () => {
               onBack={() => setCurrentView('chat')} 
               onRefreshPrices={handleRefreshPortfolio}
               onConnectWallet={handleConnectWallet}
+              onDisconnectWallet={handleDisconnectWallet}
               isRefreshing={isRefreshingPortfolio}
            />
         ) : (
