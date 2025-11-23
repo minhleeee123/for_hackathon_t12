@@ -1,3 +1,4 @@
+
 import { ethers } from "ethers";
 
 declare global {
@@ -47,4 +48,35 @@ export const connectToMetaMask = async (): Promise<WalletInfo | null> => {
 
 export const formatAddress = (address: string): string => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
+// Function to send a transaction (simulates Buy/Sell/Swap by sending ETH to an address)
+export const sendTransaction = async (toAddress: string, amountEth: string): Promise<{ hash: string } | null> => {
+    if (typeof window.ethereum === 'undefined') {
+        alert("MetaMask is not installed!");
+        return null;
+    }
+
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        
+        // Ensure connected
+        await provider.send("eth_requestAccounts", []);
+        
+        const signer = await provider.getSigner();
+        
+        // Create transaction object
+        const tx = {
+            to: toAddress,
+            value: ethers.parseEther(amountEth.toString())
+        };
+
+        // Send transaction (MetaMask popup appears here)
+        const response = await signer.sendTransaction(tx);
+        return { hash: response.hash };
+
+    } catch (error) {
+        console.error("Transaction Failed:", error);
+        throw error;
+    }
 };

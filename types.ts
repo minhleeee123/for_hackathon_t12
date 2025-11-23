@@ -34,11 +34,23 @@ export interface CryptoData {
     projectScores: ProjectMetric[];
 }
 
+// New Interface for Transaction Agent
+export interface TransactionData {
+    type: 'SEND' | 'SWAP' | 'BUY' | 'SELL';
+    token: string;
+    amount: number;
+    toAddress: string; // Recipient or Router address
+    network: string;
+    estimatedGas: string;
+    summary: string; // Brief description like "Swap 1 ETH for USDT"
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'model';
     text?: string;
     data?: CryptoData;
+    transactionData?: TransactionData; // Added field for transaction card
     isLoading?: boolean;
 }
 
