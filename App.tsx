@@ -1,9 +1,31 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail } from 'lucide-react';
 import { ChatMessage, CryptoData, ChatSession } from './types';
-import { analyzeCoin, generateMarketReport } from './services/geminiService';
+import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel } from './services/geminiService';
 import CryptoDashboard from './components/CryptoDashboard';
+
+// --- Types & Mock Data for Profile ---
+
+interface PortfolioItem {
+  symbol: string;
+  name: string;
+  amount: number;
+  avgPrice: number;
+  currentPrice: number;
+}
+
+const MOCK_USER = {
+  name: "Crypto Explorer",
+  email: "trader@gemini.ai",
+  joinDate: "September 2023",
+  totalBalance: 42560.80,
+  portfolio: [
+    { symbol: 'BTC', name: 'Bitcoin', amount: 0.45, avgPrice: 45000, currentPrice: 64200 },
+    { symbol: 'ETH', name: 'Ethereum', amount: 5.2, avgPrice: 2100, currentPrice: 3450 },
+    { symbol: 'SOL', name: 'Solana', amount: 150, avgPrice: 45, currentPrice: 148 },
+    { symbol: 'DOT', name: 'Polkadot', amount: 500, avgPrice: 8.5, currentPrice: 7.2 },
+  ] as PortfolioItem[]
+};
 
 // --- Markdown Rendering Components ---
 
@@ -23,6 +45,7 @@ const InlineFormat = ({ text }: { text: string }) => {
 };
 
 const FormattedMessage = ({ text }: { text: string }) => {
+  if (!text) return null;
   const lines = text.split('\n');
   
   return (
@@ -76,11 +99,114 @@ const FormattedMessage = ({ text }: { text: string }) => {
   );
 };
 
+// --- Profile View Component ---
+
+const ProfileView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  return (
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Header / Back Button */}
+        <div className="flex items-center gap-2 mb-4">
+          <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-bold text-white">My Profile</h1>
+        </div>
+
+        {/* User Info Card */}
+        <div className="bg-[#1e1f20] rounded-2xl p-6 border border-white/10 flex flex-col md:flex-row items-center md:items-start gap-6">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg">
+             <User className="w-10 h-10 text-white" />
+          </div>
+          <div className="flex-1 text-center md:text-left space-y-2">
+            <h2 className="text-2xl font-bold text-white">{MOCK_USER.name}</h2>
+            <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm">
+               <Mail className="w-4 h-4" />
+               <span>{MOCK_USER.email}</span>
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm">
+               <Shield className="w-4 h-4" />
+               <span>Member since {MOCK_USER.joinDate}</span>
+            </div>
+          </div>
+          <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20 text-center md:text-right min-w-[200px]">
+             <span className="text-sm text-blue-300 font-medium block mb-1">Total Estimated Balance</span>
+             <span className="text-3xl font-bold text-white">${MOCK_USER.totalBalance.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Portfolio Section */}
+        <div className="bg-[#1e1f20] rounded-2xl border border-white/10 overflow-hidden">
+           <div className="p-6 border-b border-white/5 flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-blue-400" />
+              <h3 className="text-lg font-semibold text-gray-100">Current Holdings</h3>
+           </div>
+           
+           <div className="overflow-x-auto">
+             <table className="w-full text-left border-collapse">
+               <thead>
+                 <tr className="bg-white/5 text-gray-400 text-sm uppercase tracking-wider">
+                   <th className="p-4 font-medium">Asset</th>
+                   <th className="p-4 font-medium text-right">Balance</th>
+                   <th className="p-4 font-medium text-right">Current Price</th>
+                   <th className="p-4 font-medium text-right">Value</th>
+                   <th className="p-4 font-medium text-right">PNL</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-white/5">
+                 {MOCK_USER.portfolio.map((coin, idx) => {
+                   const value = coin.amount * coin.currentPrice;
+                   const pnlPercent = ((coin.currentPrice - coin.avgPrice) / coin.avgPrice) * 100;
+                   const isProfit = pnlPercent >= 0;
+
+                   return (
+                     <tr key={idx} className="hover:bg-white/5 transition-colors">
+                       <td className="p-4">
+                         <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
+                             {coin.symbol[0]}
+                           </div>
+                           <div>
+                             <div className="font-medium text-white">{coin.name}</div>
+                             <div className="text-xs text-gray-500">{coin.symbol}</div>
+                           </div>
+                         </div>
+                       </td>
+                       <td className="p-4 text-right text-gray-300">
+                         {coin.amount.toLocaleString()} {coin.symbol}
+                       </td>
+                       <td className="p-4 text-right text-gray-300">
+                         ${coin.currentPrice.toLocaleString()}
+                       </td>
+                       <td className="p-4 text-right font-medium text-white">
+                         ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                       </td>
+                       <td className="p-4 text-right">
+                         <div className={`flex items-center justify-end gap-1 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+                           {isProfit ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                           <span className="font-medium">{Math.abs(pnlPercent).toFixed(2)}%</span>
+                         </div>
+                       </td>
+                     </tr>
+                   );
+                 })}
+               </tbody>
+             </table>
+           </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // --- Main App Component ---
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentView, setCurrentView] = useState<'chat' | 'profile'>('chat');
   
   // Initialize with one default session
   const initialSessionId = 'init-session';
@@ -104,7 +230,7 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(sessions[0].messages);
   
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState<string>(''); // 'fetching-data' | 'analyzing' | ''
+  const [loadingStatus, setLoadingStatus] = useState<string>(''); // 'fetching-data' | 'analyzing' | 'thinking' | ''
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Sync messages to the active session whenever they change
@@ -151,6 +277,7 @@ const App: React.FC = () => {
     setActiveSessionId(newId);
     setMessages(newSession.messages);
     setIsLoading(false);
+    setCurrentView('chat'); // Ensure we switch to chat view
     
     // On mobile, close sidebar when starting new chat
     if (window.innerWidth < 768) {
@@ -164,6 +291,7 @@ const App: React.FC = () => {
       setActiveSessionId(sessionId);
       setMessages(session.messages);
       setIsLoading(false); // Reset loading state when switching
+      setCurrentView('chat'); // Ensure we switch to chat view
       
       // Close sidebar on mobile when a chat is selected
       if (window.innerWidth < 768) {
@@ -193,55 +321,83 @@ const App: React.FC = () => {
     setSessions(newSessions);
   };
 
+  // Helper to get the most recent valid CryptoData from history
+  const getLastCryptoData = (msgs: ChatMessage[]): CryptoData | undefined => {
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].data) return msgs[i].data;
+    }
+    return undefined;
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    const currentInput = input;
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      text: input
+      text: currentInput
     };
 
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
-    setLoadingStatus('fetching-data');
+    setLoadingStatus('thinking');
 
     try {
-      // Step 1: Fetch the Data (Charts)
-      const coinName = input; 
-      const data: CryptoData = await analyzeCoin(coinName);
+      // Step 1: Determine User Intent
+      const intent = await determineIntent(currentInput);
+      
+      if (intent.type === 'ANALYZE' && intent.coinName) {
+        // --- FLOW 1: New Coin Analysis ---
+        setLoadingStatus('fetching-data');
+        
+        const coinName = intent.coinName; 
+        const data: CryptoData = await analyzeCoin(coinName);
 
-      const chartMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'model',
-        data: data
-      };
+        const chartMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'model',
+          data: data
+        };
+        // Show charts immediately
+        setMessages(prev => [...prev, chartMsg]);
 
-      // Show charts immediately
-      setMessages(prev => [...prev, chartMsg]);
-      
-      // Step 2: Trigger the Analysis Agent
-      setLoadingStatus('analyzing');
-      
-      // Small delay to smooth the UX transition
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const reportText = await generateMarketReport(data);
-      
-      const textMsg: ChatMessage = {
-        id: (Date.now() + 2).toString(),
-        role: 'model',
-        text: reportText
-      };
+        // Trigger Analysis Agent
+        setLoadingStatus('analyzing');
+        const reportText = await generateMarketReport(data);
+        
+        const textMsg: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          role: 'model',
+          text: reportText
+        };
+        setMessages(prev => [...prev, textMsg]);
 
-      setMessages(prev => [...prev, textMsg]);
+      } else {
+        // --- FLOW 2: Contextual Chat ---
+        setLoadingStatus('thinking');
+        
+        // Find context from previous messages
+        const contextData = getLastCryptoData(messages);
+        
+        // Send to chat model with context
+        const responseText = await chatWithModel(currentInput, messages, contextData);
+        
+        const textMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'model',
+          text: responseText
+        };
+        setMessages(prev => [...prev, textMsg]);
+      }
 
     } catch (error) {
+      console.error(error);
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: "I'm sorry, I encountered an error fetching data for that coin. Please try again."
+        text: "I'm sorry, I encountered an error processing your request. Please try again."
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -318,13 +474,13 @@ const App: React.FC = () => {
               key={session.id}
               onClick={() => loadSession(session.id)}
               className={`group flex items-center justify-between px-3 py-2 mx-2 text-sm rounded-lg cursor-pointer transition-all ${
-                activeSessionId === session.id 
+                activeSessionId === session.id && currentView === 'chat'
                   ? 'bg-blue-500/20 text-blue-100' 
                   : 'text-gray-300 hover:bg-white/5 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <MessageSquare className={`w-4 h-4 shrink-0 ${activeSessionId === session.id ? 'text-blue-400' : 'text-gray-500'}`} />
+                <MessageSquare className={`w-4 h-4 shrink-0 ${activeSessionId === session.id && currentView === 'chat' ? 'text-blue-400' : 'text-gray-500'}`} />
                 <span className="truncate">{session.title}</span>
               </div>
               
@@ -369,136 +525,159 @@ const App: React.FC = () => {
                 <span className="px-2 py-0.5 bg-blue-900/30 text-blue-400 text-xs rounded-md border border-blue-800/50 hidden sm:inline-block">2.5 Flash</span>
              </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-400">
-            <User className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Chat History */}
-        <div 
-          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth"
-          ref={scrollRef}
-        >
-          {messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              
-              {/* Avatar */}
-              <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.role === 'model' ? 'bg-transparent' : 'bg-gray-700'}`}>
-                 {msg.role === 'model' ? (
-                   <div className="relative">
-                      <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
-                      <div className="absolute inset-0 bg-blue-400/20 blur-lg rounded-full"></div>
-                   </div>
-                 ) : (
-                   <User className="w-5 h-5 text-white" />
-                 )}
-              </div>
-
-              {/* Message Content */}
-              <div className={`flex flex-col max-w-[90%] md:max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                {msg.text && (
-                  <div className={`px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-[#2d2e2f] text-white rounded-tr-none whitespace-pre-wrap' 
-                      : 'text-gray-100 w-full'
-                  }`}>
-                    {msg.role === 'user' ? (
-                      msg.text
-                    ) : (
-                      <FormattedMessage text={msg.text} />
-                    )}
-                  </div>
-                )}
-                
-                {msg.data && (
-                  <div className="w-full mt-2">
-                    <CryptoDashboard data={msg.data} />
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {isLoading && (
-            <div className="flex gap-4 animate-fade-in">
-               <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center shrink-0 mt-1">
-                  <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
-               </div>
-               <div className="flex flex-col gap-2 w-full max-w-md">
-                 {loadingStatus === 'fetching-data' ? (
-                   <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl max-w-fit">
-                             <div className="relative flex h-3 w-3 shrink-0">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-blue-200 text-sm font-medium flex items-center gap-2">
-                                    Market Data Agent
-                                    <Activity className="w-3 h-3 text-blue-400" />
-                                </span>
-                                <span className="text-blue-300/70 text-xs">Gathering live price, tokenomics, and sentiment data...</span>
-                              </div>
-                        </div>
-                   </div>
-                 ) : (
-                    <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        {/* Analysis Agent UI */}
-                        <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl max-w-fit">
-                             <div className="relative flex h-3 w-3 shrink-0">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-blue-200 text-sm font-medium flex items-center gap-2">
-                                    Analysis Agent Active
-                                    <Activity className="w-3 h-3 text-blue-400" />
-                                </span>
-                                <span className="text-blue-300/70 text-xs">Reading chart metrics & generating insights...</span>
-                              </div>
-                        </div>
-                    </div>
-                 )}
-               </div>
-            </div>
-          )}
           
-          {/* Spacer div to prevent input bar from covering the last message */}
-          <div className="w-full h-48 shrink-0" />
-        </div>
-
-        {/* Input Area */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gemini-bg via-gemini-bg to-transparent pt-10 pb-6 px-4 md:px-8 flex justify-center">
-          <div className="w-full max-w-3xl bg-[#1e1f20] rounded-full flex items-center p-2 pl-6 shadow-2xl border border-white/5 ring-1 ring-white/5 focus-within:ring-blue-500/50 transition-all">
-             <input 
-               type="text" 
-               value={input}
-               onChange={(e) => setInput(e.target.value)}
-               onKeyDown={handleKeyDown}
-               placeholder="Ask about a coin (e.g., Bitcoin, ETH)..."
-               className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 h-10"
-               disabled={isLoading}
-             />
-             
-             <div className="flex items-center gap-1 px-2">
-                <button className="p-2 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
-                  <Mic className="w-5 h-5" />
-                </button>
-                {input.trim() && (
-                  <button 
-                    onClick={handleSend}
-                    className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full text-white transition-all shadow-lg shadow-blue-900/20"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                )}
+          {/* User Profile Button - Clickable to toggle view */}
+          <div 
+             className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-105 ${currentView === 'profile' ? 'ring-2 ring-blue-500' : ''}`}
+             onClick={() => setCurrentView('profile')}
+             title="View Profile"
+          >
+             <div className="w-full h-full rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
              </div>
           </div>
-          
-          <div className="absolute bottom-2 text-[10px] text-gray-600 font-medium text-center w-full pointer-events-none">
-            Gemini can make mistakes, including about people, so double-check it.
-          </div>
         </div>
+
+        {/* CONTENT SWITCHER: Chat vs Profile */}
+        
+        {currentView === 'profile' ? (
+           <ProfileView onBack={() => setCurrentView('chat')} />
+        ) : (
+          /* Chat View */
+          <>
+            <div 
+              className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth"
+              ref={scrollRef}
+            >
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  
+                  {/* Avatar */}
+                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 mt-1 ${msg.role === 'model' ? 'bg-transparent' : 'bg-transparent'}`}>
+                     {msg.role === 'model' ? (
+                       <div className="relative">
+                          <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
+                          <div className="absolute inset-0 bg-blue-400/20 blur-lg rounded-full"></div>
+                       </div>
+                     ) : (
+                       <div className="w-full h-full rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                       </div>
+                     )}
+                  </div>
+
+                  {/* Message Content */}
+                  <div className={`flex flex-col max-w-[90%] md:max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                    {msg.text && (
+                      <div className={`px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
+                        msg.role === 'user' 
+                          ? 'bg-[#2d2e2f] text-white rounded-tr-none whitespace-pre-wrap' 
+                          : 'text-gray-100 w-full'
+                      }`}>
+                        {msg.role === 'user' ? (
+                          msg.text
+                        ) : (
+                          <FormattedMessage text={msg.text} />
+                        )}
+                      </div>
+                    )}
+                    
+                    {msg.data && (
+                      <div className="w-full mt-2">
+                        <CryptoDashboard data={msg.data} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className="flex gap-4 animate-fade-in">
+                   <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center shrink-0 mt-1">
+                      <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
+                   </div>
+                   <div className="flex flex-col gap-2 w-full max-w-md">
+                     {loadingStatus === 'fetching-data' && (
+                       <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl max-w-fit">
+                                 <div className="relative flex h-3 w-3 shrink-0">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-blue-200 text-sm font-medium flex items-center gap-2">
+                                        Market Data Agent
+                                        <Activity className="w-3 h-3 text-blue-400" />
+                                    </span>
+                                    <span className="text-blue-300/70 text-xs">Gathering live price, tokenomics, and sentiment data...</span>
+                                  </div>
+                            </div>
+                       </div>
+                     )}
+                     {loadingStatus === 'analyzing' && (
+                        <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl max-w-fit">
+                                 <div className="relative flex h-3 w-3 shrink-0">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-blue-200 text-sm font-medium flex items-center gap-2">
+                                        Analysis Agent Active
+                                        <Activity className="w-3 h-3 text-blue-400" />
+                                    </span>
+                                    <span className="text-blue-300/70 text-xs">Reading chart metrics & generating insights...</span>
+                                  </div>
+                            </div>
+                        </div>
+                     )}
+                     {loadingStatus === 'thinking' && (
+                        <div className="px-5 py-3.5 rounded-2xl bg-[#1e1f20] text-gray-400 text-sm animate-pulse">
+                            Thinking...
+                        </div>
+                     )}
+                   </div>
+                </div>
+              )}
+              
+              {/* Spacer div to prevent input bar from covering the last message */}
+              <div className="w-full h-48 shrink-0" />
+            </div>
+
+            {/* Input Area */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gemini-bg via-gemini-bg to-transparent pt-10 pb-6 px-4 md:px-8 flex justify-center">
+              <div className="w-full max-w-3xl bg-[#1e1f20] rounded-full flex items-center p-2 pl-6 shadow-2xl border border-white/5 ring-1 ring-white/5 focus-within:ring-blue-500/50 transition-all">
+                 <input 
+                   type="text" 
+                   value={input}
+                   onChange={(e) => setInput(e.target.value)}
+                   onKeyDown={handleKeyDown}
+                   placeholder="Ask about a coin (e.g., Bitcoin, ETH)..."
+                   className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 h-10"
+                   disabled={isLoading}
+                 />
+                 
+                 <div className="flex items-center gap-1 px-2">
+                    <button className="p-2 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
+                      <Mic className="w-5 h-5" />
+                    </button>
+                    {input.trim() && (
+                      <button 
+                        onClick={handleSend}
+                        className="p-2 bg-blue-500 hover:bg-blue-600 rounded-full text-white transition-all shadow-lg shadow-blue-900/20"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    )}
+                 </div>
+              </div>
+              
+              <div className="absolute bottom-2 text-[10px] text-gray-600 font-medium text-center w-full pointer-events-none">
+                Gemini can make mistakes, including about people, so double-check it.
+              </div>
+            </div>
+          </>
+        )}
 
       </div>
     </div>

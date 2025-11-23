@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { CryptoData } from "../types";
+import { CryptoData, ChatMessage } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -172,5 +172,87 @@ export const generateMarketReport = async (data: CryptoData): Promise<string> =>
   } catch (error) {
     console.error("Error generating market report:", error);
     return "Unable to generate market report at this time.";
+  }
+};
+
+// --- NEW FUNCTIONS FOR CONTEXT AWARENESS ---
+
+export const determineIntent = async (userMessage: string): Promise<{ type: 'ANALYZE' | 'CHAT'; coinName?: string }> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+        Classify the user's intent based on this message: "${userMessage}".
+        
+        1. If the user is asking to analyze a specific NEW cryptocurrency (e.g., "Analyze BTC", "Price of Solana", "ETH", "Show me Dogecoin", "how is btc doing"), return JSON: {"type": "ANALYZE", "coinName": "CorrectedCoinName"}.
+        2. If the user is asking a follow-up question, general chat, or referring to previous context (e.g., "What is the sentiment?", "Tell me more", "Why is it down?", "Is it a good buy?"), return JSON: {"type": "CHAT"}.
+        
+        Output valid JSON only.
+      `,
+      config: { 
+        responseMimeType: "application/json",
+        temperature: 0.1 
+      }
+    });
+    
+    if (response.text) {
+        return JSON.parse(response.text);
+    }
+    return { type: 'CHAT' };
+  } catch (e) {
+    console.error("Intent detection failed", e);
+    // Fallback: If short message and looks like a ticker, assume Analyze
+    if (userMessage.length < 10 && /^[a-zA-Z0-9 ]+$/.test(userMessage)) {
+       return { type: 'ANALYZE', coinName: userMessage };
+    }
+    return { type: 'CHAT' };
+  }
+}
+
+export const chatWithModel = async (
+  userMessage: string, 
+  history: ChatMessage[], 
+  contextData?: CryptoData
+): Promise<string> => {
+  try {
+    // Filter and map history for the model
+    const historyContent = history
+      .filter(msg => msg.id !== 'welcome') // Skip generic welcome
+      .map(msg => {
+        let text = msg.text || "";
+        // If a message had data, include a summary of it in the history so the model knows what was shown
+        if (msg.data) {
+          text += `\n[System: User viewed dashboard for ${msg.data.coinName}. Price: $${msg.data.currentPrice}. Sentiment: ${msg.data.sentimentScore}]`;
+        }
+        return {
+          role: msg.role,
+          parts: [{ text }]
+        };
+      });
+
+    let systemInstruction = "You are CryptoInsight AI, a helpful and professional cryptocurrency assistant.";
+    
+    // Inject the current context data heavily into the system prompt
+    if (contextData) {
+      systemInstruction += `\n\nCURRENT DASHBOARD CONTEXT:\nThe user is currently looking at a dashboard for ${contextData.coinName}.
+      Here is the live data displayed on their screen:
+      ${JSON.stringify(contextData)}
+      
+      Answer any follow-up questions (like "what is the sentiment?", "explain the tokenomics") using THIS specific data.`;
+    }
+
+    const chat = ai.chats.create({
+      model: "gemini-2.5-flash",
+      history: historyContent,
+      config: {
+        systemInstruction: systemInstruction,
+      }
+    });
+
+    const result = await chat.sendMessage({ message: userMessage });
+    return result.text;
+  } catch (error) {
+    console.error("Chat error:", error);
+    return "I'm having trouble connecting to the chat service right now.";
   }
 };
