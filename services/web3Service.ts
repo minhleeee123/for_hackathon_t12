@@ -66,14 +66,38 @@ export const sendTransaction = async (toAddress: string, amountEth: string): Pro
         const signer = await provider.getSigner();
         
         // Create transaction object
-        const tx = {
+        const tx: any = {
             to: toAddress,
             value: ethers.parseEther(amountEth.toString())
         };
 
-        // Send transaction (MetaMask popup appears here)
-        const response = await signer.sendTransaction(tx);
-        return { hash: response.hash };
+        // Try to send transaction normally.
+        // Ethers will try to estimate gas first. If funds are insufficient, this throws an error immediately
+        // preventing the Wallet UI from opening.
+        try {
+            const response = await signer.sendTransaction(tx);
+            return { hash: response.hash };
+        } catch (error: any) {
+            // Check if error is related to Insufficient Funds or Gas Estimation failure
+            const isInsufficientFunds = error.code === 'INSUFFICIENT_FUNDS';
+            const isGasEstimationFailed = error.info?.error?.code === -32000 || error.message?.includes("insufficient funds");
+
+            if (isInsufficientFunds || isGasEstimationFailed) {
+                console.warn("Gas estimation failed (likely insufficient funds). Retrying with manual gasLimit to force Wallet UI...");
+                
+                // Set a manual gasLimit. This tells Ethers to SKIP the estimateGas step 
+                // and send the request directly to MetaMask.
+                // 300,000 is enough for standard ETH transfers (21k) and most Uniswap swaps (~150-200k).
+                tx.gasLimit = 300000; 
+
+                // Send again. Now MetaMask should pop up and show the red "Insufficient funds" warning itself.
+                const response = await signer.sendTransaction(tx);
+                return { hash: response.hash };
+            }
+
+            // If it's another type of error (e.g. user rejected), rethrow it
+            throw error;
+        }
 
     } catch (error) {
         console.error("Transaction Failed:", error);
