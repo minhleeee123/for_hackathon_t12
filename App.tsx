@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart } from 'lucide-react';
+import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart, RefreshCw } from 'lucide-react';
 import { ChatMessage, CryptoData, ChatSession, PortfolioItem } from './types';
-import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio } from './services/geminiService';
+import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio, updatePortfolioRealTime } from './services/geminiService';
 import CryptoDashboard from './components/CryptoDashboard';
 
 // --- Types & Mock Data for Profile ---
 
-const MOCK_USER = {
+const INITIAL_USER_DATA = {
   name: "Crypto Explorer",
   email: "trader@gemini.ai",
   joinDate: "September 2023",
-  totalBalance: 42560.80,
+  totalBalance: 0, // Calculated dynamically
   portfolio: [
     { symbol: 'BTC', name: 'Bitcoin', amount: 0.45, avgPrice: 45000, currentPrice: 64200 },
     { symbol: 'ETH', name: 'Ethereum', amount: 5.2, avgPrice: 2100, currentPrice: 3450 },
@@ -93,17 +93,43 @@ const FormattedMessage = ({ text }: { text: string }) => {
 
 // --- Profile View Component ---
 
-const ProfileView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+interface ProfileProps {
+    user: typeof INITIAL_USER_DATA;
+    onBack: () => void;
+    onRefreshPrices: () => Promise<void>;
+    isRefreshing: boolean;
+}
+
+const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, isRefreshing }) => {
+  
+  // Auto refresh when mounting profile view
+  useEffect(() => {
+    onRefreshPrices();
+  }, []);
+
+  // Calculate current total balance based on real-time prices
+  const currentTotalBalance = user.portfolio.reduce((sum, item) => sum + (item.amount * item.currentPrice), 0);
+
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header / Back Button */}
-        <div className="flex items-center gap-2 mb-4">
-          <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-2xl font-bold text-white">My Profile</h1>
+        <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+                <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
+                    <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h1 className="text-2xl font-bold text-white">My Profile</h1>
+            </div>
+            <button 
+                onClick={onRefreshPrices}
+                disabled={isRefreshing}
+                className={`p-2 rounded-full transition-all ${isRefreshing ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-white/10 text-gray-400'}`}
+                title="Refresh Prices"
+            >
+                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
         </div>
 
         {/* User Info Card */}
@@ -112,19 +138,21 @@ const ProfileView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
              <User className="w-10 h-10 text-white" />
           </div>
           <div className="flex-1 text-center md:text-left space-y-2">
-            <h2 className="text-2xl font-bold text-white">{MOCK_USER.name}</h2>
+            <h2 className="text-2xl font-bold text-white">{user.name}</h2>
             <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm">
                <Mail className="w-4 h-4" />
-               <span>{MOCK_USER.email}</span>
+               <span>{user.email}</span>
             </div>
             <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm">
                <Shield className="w-4 h-4" />
-               <span>Member since {MOCK_USER.joinDate}</span>
+               <span>Member since {user.joinDate}</span>
             </div>
           </div>
           <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20 text-center md:text-right min-w-[200px]">
              <span className="text-sm text-blue-300 font-medium block mb-1">Total Estimated Balance</span>
-             <span className="text-3xl font-bold text-white">${MOCK_USER.totalBalance.toLocaleString()}</span>
+             <span className="text-3xl font-bold text-white">
+                {isRefreshing ? 'Updating...' : `$${currentTotalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+             </span>
           </div>
         </div>
 
@@ -147,7 +175,7 @@ const ProfileView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                  </tr>
                </thead>
                <tbody className="divide-y divide-white/5">
-                 {MOCK_USER.portfolio.map((coin, idx) => {
+                 {user.portfolio.map((coin, idx) => {
                    const value = coin.amount * coin.currentPrice;
                    const pnlPercent = ((coin.currentPrice - coin.avgPrice) / coin.avgPrice) * 100;
                    const isProfit = pnlPercent >= 0;
@@ -169,7 +197,7 @@ const ProfileView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                          {coin.amount.toLocaleString()} {coin.symbol}
                        </td>
                        <td className="p-4 text-right text-gray-300">
-                         ${coin.currentPrice.toLocaleString()}
+                         ${coin.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                        </td>
                        <td className="p-4 text-right font-medium text-white">
                          ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -200,6 +228,10 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<'chat' | 'profile'>('chat');
   
+  // User State with Real data capabilities
+  const [userProfile, setUserProfile] = useState(INITIAL_USER_DATA);
+  const [isRefreshingPortfolio, setIsRefreshingPortfolio] = useState(false);
+
   // Initialize with one default session
   const initialSessionId = 'init-session';
   const [sessions, setSessions] = useState<ChatSession[]>([
@@ -250,6 +282,21 @@ const App: React.FC = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading, loadingStatus]);
+
+  const handleRefreshPortfolio = async () => {
+    setIsRefreshingPortfolio(true);
+    try {
+        const updatedPortfolio = await updatePortfolioRealTime(userProfile.portfolio);
+        setUserProfile(prev => ({
+            ...prev,
+            portfolio: updatedPortfolio
+        }));
+    } catch (e) {
+        console.error("Failed to refresh portfolio", e);
+    } finally {
+        setIsRefreshingPortfolio(false);
+    }
+  };
 
   const handleNewChat = () => {
     const newId = Date.now().toString();
@@ -370,8 +417,11 @@ const App: React.FC = () => {
         // --- FLOW 2: Portfolio Analysis ---
         setLoadingStatus('analyzing-portfolio');
 
-        // Pass the mock portfolio data to the service
-        const reportText = await analyzePortfolio(MOCK_USER.portfolio);
+        // Note: Per user request, we do NOT fetch real-time prices here to save time.
+        // We use the current state of the portfolio.
+        
+        // Pass the portfolio data to the service
+        const reportText = await analyzePortfolio(userProfile.portfolio);
 
         const textMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -547,7 +597,12 @@ const App: React.FC = () => {
         {/* CONTENT SWITCHER: Chat vs Profile */}
         
         {currentView === 'profile' ? (
-           <ProfileView onBack={() => setCurrentView('chat')} />
+           <ProfileView 
+              user={userProfile} 
+              onBack={() => setCurrentView('chat')} 
+              onRefreshPrices={handleRefreshPortfolio}
+              isRefreshing={isRefreshingPortfolio}
+           />
         ) : (
           /* Chat View */
           <>
