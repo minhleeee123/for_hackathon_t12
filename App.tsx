@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart, RefreshCw } from 'lucide-react';
+import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart, RefreshCw, Link2 } from 'lucide-react';
 import { ChatMessage, CryptoData, ChatSession, PortfolioItem } from './types';
 import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio, updatePortfolioRealTime } from './services/geminiService';
+import { connectToMetaMask, formatAddress } from './services/web3Service';
 import CryptoDashboard from './components/CryptoDashboard';
 
 // --- Types & Mock Data for Profile ---
@@ -10,6 +11,7 @@ const INITIAL_USER_DATA = {
   name: "Crypto Explorer",
   email: "trader@gemini.ai",
   joinDate: "September 2023",
+  walletAddress: null as string | null,
   totalBalance: 0, // Calculated dynamically
   portfolio: [
     { symbol: 'BTC', name: 'Bitcoin', amount: 0.45, avgPrice: 45000, currentPrice: 64200 },
@@ -97,10 +99,11 @@ interface ProfileProps {
     user: typeof INITIAL_USER_DATA;
     onBack: () => void;
     onRefreshPrices: () => Promise<void>;
+    onConnectWallet: () => Promise<void>;
     isRefreshing: boolean;
 }
 
-const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, isRefreshing }) => {
+const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, onConnectWallet, isRefreshing }) => {
   
   // Auto refresh when mounting profile view
   useEffect(() => {
@@ -134,11 +137,30 @@ const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, is
 
         {/* User Info Card */}
         <div className="bg-[#1e1f20] rounded-2xl p-6 border border-white/10 flex flex-col md:flex-row items-center md:items-start gap-6">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg relative">
              <User className="w-10 h-10 text-white" />
+             {user.walletAddress && (
+                <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-1.5 border-4 border-[#1e1f20]" title="Wallet Connected">
+                    <Link2 className="w-3 h-3 text-white" />
+                </div>
+             )}
           </div>
           <div className="flex-1 text-center md:text-left space-y-2">
-            <h2 className="text-2xl font-bold text-white">{user.name}</h2>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-start">
+                <h2 className="text-2xl font-bold text-white">{user.name}</h2>
+                {user.walletAddress ? (
+                    <span className="px-3 py-1 bg-green-500/10 text-green-400 text-xs rounded-full border border-green-500/20 font-mono">
+                        {formatAddress(user.walletAddress)}
+                    </span>
+                ) : (
+                    <button 
+                        onClick={onConnectWallet}
+                        className="px-3 py-1 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs rounded-full border border-orange-500/20 transition-colors flex items-center gap-1 mx-auto md:mx-0"
+                    >
+                        <Wallet className="w-3 h-3" /> Connect MetaMask
+                    </button>
+                )}
+            </div>
             <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm">
                <Mail className="w-4 h-4" />
                <span>{user.email}</span>
@@ -158,9 +180,12 @@ const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, is
 
         {/* Portfolio Section */}
         <div className="bg-[#1e1f20] rounded-2xl border border-white/10 overflow-hidden">
-           <div className="p-6 border-b border-white/5 flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-blue-400" />
-              <h3 className="text-lg font-semibold text-gray-100">Current Holdings</h3>
+           <div className="p-6 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-blue-400" />
+                  <h3 className="text-lg font-semibold text-gray-100">Current Holdings</h3>
+              </div>
+              {user.walletAddress && <span className="text-xs text-gray-500">Includes Web3 Wallet</span>}
            </div>
            
            <div className="overflow-x-auto">
@@ -177,24 +202,28 @@ const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, is
                <tbody className="divide-y divide-white/5">
                  {user.portfolio.map((coin, idx) => {
                    const value = coin.amount * coin.currentPrice;
-                   const pnlPercent = ((coin.currentPrice - coin.avgPrice) / coin.avgPrice) * 100;
+                   const pnlPercent = coin.avgPrice > 0 ? ((coin.currentPrice - coin.avgPrice) / coin.avgPrice) * 100 : 0;
                    const isProfit = pnlPercent >= 0;
+                   const isWeb3 = coin.name.includes("(Wallet)");
 
                    return (
-                     <tr key={idx} className="hover:bg-white/5 transition-colors">
+                     <tr key={idx} className={`hover:bg-white/5 transition-colors ${isWeb3 ? 'bg-orange-500/5' : ''}`}>
                        <td className="p-4">
                          <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
+                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${isWeb3 ? 'bg-orange-600' : 'bg-gray-700'}`}>
                              {coin.symbol[0]}
                            </div>
                            <div>
-                             <div className="font-medium text-white">{coin.name}</div>
+                             <div className="font-medium text-white flex items-center gap-1">
+                                {coin.name}
+                                {isWeb3 && <Link2 className="w-3 h-3 text-orange-400" />}
+                             </div>
                              <div className="text-xs text-gray-500">{coin.symbol}</div>
                            </div>
                          </div>
                        </td>
                        <td className="p-4 text-right text-gray-300">
-                         {coin.amount.toLocaleString()} {coin.symbol}
+                         {coin.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })} {coin.symbol}
                        </td>
                        <td className="p-4 text-right text-gray-300">
                          ${coin.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -203,10 +232,14 @@ const ProfileView: React.FC<ProfileProps> = ({ user, onBack, onRefreshPrices, is
                          ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                        </td>
                        <td className="p-4 text-right">
-                         <div className={`flex items-center justify-end gap-1 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
-                           {isProfit ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                           <span className="font-medium">{Math.abs(pnlPercent).toFixed(2)}%</span>
-                         </div>
+                         {coin.avgPrice > 0 ? (
+                             <div className={`flex items-center justify-end gap-1 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+                                {isProfit ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                <span className="font-medium">{Math.abs(pnlPercent).toFixed(2)}%</span>
+                             </div>
+                         ) : (
+                             <span className="text-gray-500 text-xs">N/A</span>
+                         )}
                        </td>
                      </tr>
                    );
@@ -295,6 +328,37 @@ const App: React.FC = () => {
         console.error("Failed to refresh portfolio", e);
     } finally {
         setIsRefreshingPortfolio(false);
+    }
+  };
+
+  const handleConnectWallet = async () => {
+    const walletData = await connectToMetaMask();
+    if (walletData) {
+        // 1. Update user profile with address
+        // 2. Add/Update the ETH holdings in the portfolio
+        
+        setUserProfile(prev => {
+            // Remove existing wallet ETH entry if exists to avoid dupes
+            const cleanPortfolio = prev.portfolio.filter(p => !p.name.includes("(Wallet)"));
+            
+            // Assuming current ETH price is needed. For now, we use a placeholder or find existing ETH price
+            const existingEth = prev.portfolio.find(p => p.symbol === 'ETH');
+            const currentEthPrice = existingEth ? existingEth.currentPrice : 3000;
+
+            const newWalletItem: PortfolioItem = {
+                symbol: 'ETH',
+                name: 'Ethereum (Wallet)',
+                amount: parseFloat(walletData.balance),
+                avgPrice: 0, // External wallet, unknown buy price
+                currentPrice: currentEthPrice
+            };
+
+            return {
+                ...prev,
+                walletAddress: walletData.address,
+                portfolio: [newWalletItem, ...cleanPortfolio]
+            };
+        });
     }
   };
 
@@ -588,8 +652,11 @@ const App: React.FC = () => {
              onClick={() => setCurrentView('profile')}
              title="View Profile"
           >
-             <div className="w-full h-full rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+             <div className="w-full h-full rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center relative">
                 <User className="w-5 h-5 text-white" />
+                {userProfile.walletAddress && (
+                    <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#131314]"></div>
+                )}
              </div>
           </div>
         </div>
@@ -601,6 +668,7 @@ const App: React.FC = () => {
               user={userProfile} 
               onBack={() => setCurrentView('chat')} 
               onRefreshPrices={handleRefreshPortfolio}
+              onConnectWallet={handleConnectWallet}
               isRefreshing={isRefreshingPortfolio}
            />
         ) : (
