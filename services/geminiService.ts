@@ -413,7 +413,7 @@ export const analyzeChartImage = async (base64Image: string, promptText: string)
             contents: {
                 parts: [
                     imagePart,
-                    { text: `The user has drawn indicators/lines on this chart. ${promptText}. Analyze the technical setup based on these visual cues.` }
+                    { text: `The user has drawn indicators/lines on this chart. ${promptText}. Analyze the technical setup based on these visual cues.Limit your response to approximately 15 lines.` }
                 ]
             }
         });
