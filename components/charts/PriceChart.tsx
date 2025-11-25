@@ -1,9 +1,17 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Maximize2, X } from 'lucide-react';
+import { Maximize2, X, Send, Camera, Bot, Loader2 } from 'lucide-react';
+import { analyzeChartImage } from '../../services/geminiService';
 
 interface PriceChartProps {
   symbol: string; // e.g. "BTC", "SOL"
+}
+
+interface ChartChatMessage {
+    id: string;
+    role: 'user' | 'model';
+    text: string;
+    isAnalysis?: boolean;
 }
 
 declare global {
@@ -15,10 +23,14 @@ declare global {
 const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
   const containerId = useRef(`tv-widget-${Math.random().toString(36).substring(7)}`);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Chat State inside Modal
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChartChatMessage[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Helper to get formatted symbol (e.g. BINANCE:BTCUSDT)
   const getTVSymbol = (sym: string) => {
-    // Basic mapping, can be expanded. Defaulting to Binance USDT pairs which are standard.
     return `BINANCE:${sym.toUpperCase()}USDT`;
   };
 
@@ -54,21 +66,93 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
     script.async = true;
     script.onload = () => loadWidget(containerId.current, false);
     document.head.appendChild(script);
-    
-    return () => {
-        // Cleanup not strictly necessary for script, but good practice if needed
-    };
   }, [symbol]);
 
   // Effect for the modal chart
   useEffect(() => {
     if (isModalOpen && window.TradingView) {
+        setChatMessages([{
+            id: 'init',
+            role: 'model',
+            text: 'I am here to help. Draw your support/resistance lines on the chart, then click "Analyze Chart" to let me see what you see!'
+        }]);
+        
         // Wait a tick for the modal DOM to exist
         setTimeout(() => {
             loadWidget("tv-modal-container", true);
         }, 100);
     }
   }, [isModalOpen, symbol]);
+
+  const captureAndAnalyze = async () => {
+    try {
+        setIsAnalyzing(true);
+        setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text: "Analyze the chart lines I just drew." }]);
+
+        // 1. Capture Screen using standard API
+        // We prioritize "browser" displaySurface to encourage tab sharing which is cleaner
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { displaySurface: "browser" } as any, 
+            audio: false
+        });
+
+        // 2. Create a hidden video element to play the stream
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.autoplay = true;
+        video.muted = true; // Required for autoplay in some browsers
+
+        // Wait for the video to be ready and playing
+        await new Promise<void>((resolve) => {
+            video.onloadedmetadata = () => {
+                video.play().then(() => {
+                    // Add a small delay to ensure the frame is rendered completely
+                    setTimeout(() => resolve(), 500);
+                });
+            };
+        });
+
+        // 3. Draw the video frame to a canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const base64Image = canvas.toDataURL('image/png');
+
+            // 4. Stop the stream (stop sharing) immediately after capture
+            stream.getTracks().forEach(track => track.stop());
+
+            // 5. Send to Gemini
+            const analysis = await analyzeChartImage(base64Image, "Analyze the technical indicators, support/resistance levels, and chart patterns visible in this image. Provide a trading setup recommendation.");
+            
+            setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: analysis, isAnalysis: true }]);
+        } else {
+             throw new Error("Could not create canvas context");
+        }
+
+    } catch (error) {
+        console.error("Capture failed:", error);
+        setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "I couldn't capture the screen. Please ensure you select the current tab/window when prompted and grant permission." }]);
+    } finally {
+        setIsAnalyzing(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+     if (!chatInput.trim()) return;
+     const userText = chatInput;
+     setChatInput('');
+     setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text: userText }]);
+     
+     // Simple chat fallback if not analyzing image
+     // ideally this would hook into main chat or be purely frontend for now
+     setTimeout(() => {
+         setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "That's an interesting observation. If you want me to look at specific levels, draw them and click 'Analyze Chart View' button." }]);
+     }, 1000);
+  };
 
   return (
     <>
@@ -92,16 +176,21 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
             </h3>
         </div>
 
-        {/* Modal Popup */}
+        {/* Full Screen Modal */}
         {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                <div className="bg-[#131314] w-full max-w-6xl h-[80vh] rounded-2xl border border-white/10 relative flex flex-col shadow-2xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+                <div className="bg-[#131314] w-full max-w-[95vw] h-[90vh] rounded-2xl border border-white/10 relative flex flex-col shadow-2xl overflow-hidden">
                     
                     {/* Modal Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#1e1f20] rounded-t-2xl">
-                        <div className="flex items-center gap-2">
-                             <h2 className="text-white font-bold text-lg">{symbol} / USDT</h2>
-                             <span className="text-gray-500 text-sm">Advanced Chart</span>
+                    <div className="flex items-center justify-between p-3 border-b border-white/10 bg-[#1e1f20] shrink-0">
+                        <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                                <Bot className="w-5 h-5 text-white" />
+                             </div>
+                             <div>
+                                <h2 className="text-white font-bold text-lg">{symbol} Technical Analysis</h2>
+                                <span className="text-gray-500 text-xs">Draw on the chart & ask AI</span>
+                             </div>
                         </div>
                         <button 
                             onClick={() => setIsModalOpen(false)}
@@ -111,9 +200,82 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
                         </button>
                     </div>
 
-                    {/* Modal Content */}
-                    <div className="flex-1 w-full h-full bg-[#131314] p-1">
-                        <div id="tv-modal-container" className="w-full h-full rounded-b-xl" />
+                    {/* Modal Body - Split Layout */}
+                    <div className="flex-1 flex overflow-hidden">
+                        
+                        {/* LEFT: TradingView Chart (75%) */}
+                        <div className="w-3/4 h-full border-r border-white/10 bg-black relative">
+                            <div id="tv-modal-container" className="w-full h-full" />
+                            
+                            {/* Analyze Button Overlay */}
+                            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+                                <button 
+                                    onClick={captureAndAnalyze}
+                                    disabled={isAnalyzing}
+                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-full shadow-xl shadow-blue-900/40 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed font-medium"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" /> Analyzing Screen...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Camera className="w-5 h-5" /> Analyze Chart View
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* RIGHT: Chat Interface (25%) */}
+                        <div className="w-1/4 h-full bg-[#1e1f20] flex flex-col">
+                             {/* Chat List */}
+                             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                                {chatMessages.map((msg) => (
+                                    <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                        <div className={`max-w-[90%] px-4 py-3 rounded-2xl text-sm ${
+                                            msg.role === 'user' 
+                                                ? 'bg-blue-600 text-white rounded-br-none' 
+                                                : 'bg-[#2d2e2f] text-gray-200 rounded-bl-none border border-white/5'
+                                        }`}>
+                                            {msg.text}
+                                        </div>
+                                        <span className="text-[10px] text-gray-500 mt-1">
+                                            {msg.role === 'user' ? 'You' : 'Analyst Agent'}
+                                        </span>
+                                    </div>
+                                ))}
+                                {isAnalyzing && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-[#2d2e2f] px-4 py-3 rounded-2xl rounded-bl-none flex items-center gap-2 border border-white/5">
+                                            <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                                            <span className="text-xs text-gray-400">Looking at your chart...</span>
+                                        </div>
+                                    </div>
+                                )}
+                             </div>
+
+                             {/* Input Area */}
+                             <div className="p-3 border-t border-white/10 bg-[#1e1f20]">
+                                <div className="flex items-center gap-2 bg-black/30 p-2 rounded-xl border border-white/5 focus-within:border-blue-500/50 transition-colors">
+                                    <input 
+                                        type="text" 
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                        placeholder="Ask about levels..."
+                                        className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+                                    />
+                                    <button 
+                                        onClick={handleSendMessage}
+                                        className="p-1.5 bg-blue-600 rounded-lg text-white hover:bg-blue-500 transition-colors"
+                                    >
+                                        <Send className="w-4 h-4" />
+                                    </button>
+                                </div>
+                             </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
