@@ -10,6 +10,7 @@ const cryptoSchema: Schema = {
   type: Type.OBJECT,
   properties: {
     coinName: { type: Type.STRING, description: "Name of the cryptocurrency" },
+    symbol: { type: Type.STRING, description: "Ticker symbol (e.g. BTC, ETH)" },
     currentPrice: { type: Type.NUMBER, description: "Current price in USD" },
     summary: { type: Type.STRING, description: "A brief analytical summary based on the provided real data." },
     priceHistory: {
@@ -56,7 +57,7 @@ const cryptoSchema: Schema = {
       }
     }
   },
-  required: ["coinName", "currentPrice", "summary", "priceHistory", "tokenomics", "sentimentScore", "longShortRatio", "projectScores"]
+  required: ["coinName", "symbol", "currentPrice", "summary", "priceHistory", "tokenomics", "sentimentScore", "longShortRatio", "projectScores"]
 };
 
 const transactionSchema: Schema = {
@@ -182,7 +183,7 @@ export const analyzeCoin = async (coinName: string): Promise<CryptoData> => {
   let realSentiment = 50;
   let realLongShort: LongShortData[] | null = null;
   let identifiedName = coinName;
-  let identifiedSymbol = "";
+  let identifiedSymbol = "BTC"; // Default fallback
 
   if (coinInfo) {
     identifiedName = coinInfo.name;
@@ -207,7 +208,8 @@ export const analyzeCoin = async (coinName: string): Promise<CryptoData> => {
     Your job is to structure this data into the required JSON format and generating the missing pieces (Tokenomics, Project Score) based on your knowledge of the project.
 
     REAL DATA PROVIDED:
-    - Coin Name: ${identifiedName} (${identifiedSymbol})
+    - Coin Name: ${identifiedName}
+    - Symbol: ${identifiedSymbol}
     - Current Price: ${realPriceData ? `$${realPriceData.currentPrice}` : "Unknown, please estimate"}
     - Price History (7D): ${realPriceData ? JSON.stringify(realPriceData.history) : "Unavailable, please generate realistic data"}
     - Market Sentiment (Fear & Greed): ${realSentiment}
@@ -223,7 +225,7 @@ export const analyzeCoin = async (coinName: string): Promise<CryptoData> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Generate the full JSON dashboard data for ${identifiedName}.`,
+      contents: `Generate the full JSON dashboard data for ${identifiedName} (${identifiedSymbol}).`,
       config: {
         systemInstruction: systemPrompt,
         responseMimeType: "application/json",

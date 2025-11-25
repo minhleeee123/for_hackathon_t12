@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CryptoData } from '../types';
 import PriceChart from './charts/PriceChart';
@@ -30,7 +31,8 @@ const CryptoDashboard: React.FC<Props> = ({ data }) => {
       {/* Top Row: Price & Sentiment */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
-          <PriceChart data={data.priceHistory} color="#4c8df6" />
+          {/* Replaced AreaChart with TradingView Widget, passing Symbol */}
+          <PriceChart symbol={data.symbol || "BTC"} />
         </div>
         <div className="md:col-span-1">
           <SentimentChart score={data.sentimentScore} />

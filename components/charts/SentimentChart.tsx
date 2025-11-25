@@ -39,7 +39,6 @@ const SentimentChart: React.FC<SentimentChartProps> = ({ score }) => {
             <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
             <RadialBar
                 background={{ fill: '#333' }}
-                clockWise
                 dataKey="value"
                 cornerRadius={10}
             />

@@ -25,6 +25,7 @@ export interface ProjectMetric {
 
 export interface CryptoData {
     coinName: string;
+    symbol: string; // Added symbol for TradingView (e.g. "BTC")
     currentPrice: number;
     summary: string;
     priceHistory: PricePoint[];
