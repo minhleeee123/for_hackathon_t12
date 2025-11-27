@@ -283,7 +283,7 @@ export const createTransactionPreview = async (userText: string): Promise<Transa
     }
 }
 
-export const generateMarketReport = async (data: CryptoData): Promise<string> => {
+export async function generateMarketReport(data: CryptoData): Promise<string> {
   try {
     const dataString = JSON.stringify(data, null, 2);
     const response = await ai.models.generateContent({
@@ -300,12 +300,12 @@ export const generateMarketReport = async (data: CryptoData): Promise<string> =>
       - **Verdict**: Bullish, Bearish, or Neutral?
       `,
     });
-    return response.text || "Analysis generation failed.";
+    return response.text || "Unable to generate market report.";
   } catch (error) {
     console.error("Error generating report:", error);
     return "Unable to generate market report.";
   }
-};
+}
 
 export const determineIntent = async (userMessage: string): Promise<{ type: 'ANALYZE' | 'CHAT' | 'PORTFOLIO_ANALYSIS' | 'TRANSACTION'; coinName?: string }> => {
   try {
@@ -381,7 +381,7 @@ export const updatePortfolioRealTime = async (portfolio: PortfolioItem[]): Promi
   }
 };
 
-export const analyzePortfolio = async (portfolio: PortfolioItem[]): Promise<string> => {
+export async function analyzePortfolio(portfolio: PortfolioItem[]): Promise<string> {
   try {
      const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -393,13 +393,13 @@ export const analyzePortfolio = async (portfolio: PortfolioItem[]): Promise<stri
       3. Risk Assessment (Diversification).
       4. Suggestion for rebalancing.`,
     });
-    return response.text || "Unable to analyze portfolio.";
+    return response.text || "Error analyzing portfolio.";
   } catch {
     return "Error analyzing portfolio.";
   }
 }
 
-export const analyzeChartImage = async (base64Image: string, promptText: string): Promise<string> => {
+export async function analyzeChartImage(base64Image: string, promptText: string): Promise<string> {
     try {
         const imagePart = {
             inlineData: {
@@ -413,14 +413,13 @@ export const analyzeChartImage = async (base64Image: string, promptText: string)
             contents: {
                 parts: [
                     imagePart,
-                    { text: `The user has drawn indicators/lines on this chart. ${promptText}. Analyze the technical setup based on these visual cues.Limit your response to approximately 15 lines.` }
+                    { text: `The user has drawn indicators/lines on this chart. ${promptText}. Analyze the technical setup based on these visual cues.` }
                 ]
             }
         });
-
-        return response.text || "Could not analyze the chart image.";
+        return response.text || "I encountered an error trying to see the chart. Please try again.";
     } catch (error) {
         console.error("Vision Analysis Error:", error);
         return "I encountered an error trying to see the chart. Please try again.";
     }
-};
+}

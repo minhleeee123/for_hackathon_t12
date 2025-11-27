@@ -128,11 +128,17 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
         stream.getTracks().forEach(track => track.stop());
 
         // 5. Send to Gemini
-        setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text: "Analyze the chart lines I just drew." }]);
+        const userMsgId = Date.now().toString();
+        setChatMessages(prev => [...prev, { id: userMsgId, role: 'user', text: "Analyze the chart lines I just drew." }]);
         
-        const analysis = await analyzeChartImage(base64Image, "Analyze the technical indicators, support/resistance levels, and chart patterns visible in this image. Provide a trading setup recommendation.");
+        const modelMsgId = (Date.now() + 1).toString();
+        // Create initial empty model message placeholder removed, wait for full response
         
-        setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: analysis, isAnalysis: true }]);
+        // Call non-streaming service
+        const analysisText = await analyzeChartImage(base64Image, "Analyze the technical indicators, support/resistance levels, and chart patterns visible in this image. Provide a trading setup recommendation.");
+
+        // Update with full response
+        setChatMessages(prev => [...prev, { id: modelMsgId, role: 'model', text: analysisText, isAnalysis: true }]);
 
     } catch (error: any) {
         console.error("Capture failed:", error);
@@ -236,7 +242,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
                              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                                 {chatMessages.map((msg) => (
                                     <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                        <div className={`max-w-[90%] px-4 py-3 rounded-2xl text-sm ${
+                                        <div className={`max-w-[90%] px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap ${
                                             msg.role === 'user' 
                                                 ? 'bg-blue-600 text-white rounded-br-none' 
                                                 : 'bg-[#2d2e2f] text-gray-200 rounded-bl-none border border-white/5'
@@ -248,7 +254,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol }) => {
                                         </span>
                                     </div>
                                 ))}
-                                {isAnalyzing && (
+                                {isAnalyzing && chatMessages.length > 0 && chatMessages[chatMessages.length - 1].role === 'user' && (
                                     <div className="flex justify-start">
                                         <div className="bg-[#2d2e2f] px-4 py-3 rounded-2xl rounded-bl-none flex items-center gap-2 border border-white/5">
                                             <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />

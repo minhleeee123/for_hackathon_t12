@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart, RefreshCw, Link2, X } from 'lucide-react';
+import { Send, Bot, User, Mic, Sparkles, Menu, Plus, Activity, MessageSquare, Trash2, Wallet, TrendingUp, TrendingDown, ArrowLeft, Shield, Mail, PieChart, RefreshCw, Link2, X, Compass, Lightbulb, ArrowRightLeft, Search } from 'lucide-react';
 import { ChatMessage, CryptoData, ChatSession, PortfolioItem, TransactionData } from './types';
 import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio, updatePortfolioRealTime, createTransactionPreview } from './services/geminiService';
 import { connectToMetaMask, formatAddress } from './services/web3Service';
@@ -22,6 +22,39 @@ const INITIAL_USER_DATA = {
     { symbol: 'DOT', name: 'Polkadot', amount: 500, avgPrice: 8.5, currentPrice: 7.2 },
   ] as PortfolioItem[]
 };
+
+// --- Constants for Suggested Prompts ---
+
+const SUGGESTED_PROMPTS = [
+  {
+    title: "Market Analysis",
+    subtitle: "Deep dive into Bitcoin's chart & sentiment",
+    prompt: "Analyze Bitcoin price action and current market sentiment.",
+    icon: TrendingUp,
+    color: "text-blue-400"
+  },
+  {
+    title: "Portfolio Health",
+    subtitle: "Review diversification & risks",
+    prompt: "Analyze my portfolio risks and suggest rebalancing.",
+    icon: PieChart,
+    color: "text-purple-400"
+  },
+  {
+    title: "Transaction Agent",
+    subtitle: "Draft a swap or transfer",
+    prompt: "Swap 1 ETH for USDT",
+    icon: ArrowRightLeft,
+    color: "text-orange-400"
+  },
+  {
+    title: "Project Discovery",
+    subtitle: "Research a specific token",
+    prompt: "How is Solana doing fundamentally?",
+    icon: Search,
+    color: "text-green-400"
+  }
+];
 
 // --- Markdown Rendering Components ---
 
@@ -286,7 +319,7 @@ const App: React.FC = () => {
         { 
           id: 'welcome', 
           role: 'model', 
-          text: 'Hello! I am CryptoInsight AI. Ask me about any coin (e.g., "Analyze Solana") or ask me to "Analyze my portfolio" to see how your holdings are doing.' 
+          text: 'Hello! I am CryptoInsight AI. I can analyze markets, check your portfolio health, or even help draft web3 transactions. How can I help you today?' 
         }
       ]
     }
@@ -487,31 +520,31 @@ const App: React.FC = () => {
 
         // Trigger Analysis Agent
         setLoadingStatus('analyzing');
+        
+        // Setup empty message placeholder
+        const reportMsgId = (Date.now() + 2).toString();
+        // setMessages(prev => [...prev, { id: reportMsgId, role: 'model', text: '' }]); // Removed for non-streaming: we just wait now
+        
+        // Get full text
         const reportText = await generateMarketReport(data);
         
-        const textMsg: ChatMessage = {
-          id: (Date.now() + 2).toString(),
-          role: 'model',
-          text: reportText
-        };
-        setMessages(prev => [...prev, textMsg]);
+        // Clear specific loading status
+        setLoadingStatus('');
+
+        setMessages(prev => [...prev, { id: reportMsgId, role: 'model', text: reportText }]);
 
       } else if (intent.type === 'PORTFOLIO_ANALYSIS') {
         // --- FLOW 2: Portfolio Analysis ---
         setLoadingStatus('analyzing-portfolio');
 
-        // Note: Per user request, we do NOT fetch real-time prices here to save time.
-        // We use the current state of the portfolio.
-        
-        // Pass the portfolio data to the service
+        // Get full text
         const reportText = await analyzePortfolio(userProfile.portfolio);
+        
+        // Clear specific loading status
+        setLoadingStatus('');
 
-        const textMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: reportText
-        };
-        setMessages(prev => [...prev, textMsg]);
+        const reportMsgId = (Date.now() + 1).toString();
+        setMessages(prev => [...prev, { id: reportMsgId, role: 'model', text: reportText }]);
 
       } else if (intent.type === 'TRANSACTION') {
         // --- FLOW 3: Transaction Agent ---
@@ -760,6 +793,28 @@ const App: React.FC = () => {
                   </div>
                 </div>
               ))}
+
+              {/* SUGGESTED PROMPTS - Only show if chat is empty (just 1 welcome message) */}
+              {messages.length === 1 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mt-8 animate-in fade-in duration-700 slide-in-from-bottom-4">
+                      {SUGGESTED_PROMPTS.map((item, index) => {
+                          const Icon = item.icon;
+                          return (
+                              <button 
+                                key={index}
+                                onClick={() => setInput(item.prompt)}
+                                className="text-left p-4 rounded-xl bg-[#1e1f20] border border-white/5 hover:bg-[#2d2e2f] hover:border-white/10 transition-all group shadow-sm hover:shadow-md"
+                              >
+                                  <div className={`mb-3 p-2 rounded-lg bg-white/5 w-fit group-hover:scale-110 transition-transform ${item.color}`}>
+                                      <Icon className="w-5 h-5" />
+                                  </div>
+                                  <h3 className="text-gray-200 font-medium text-sm mb-1">{item.title}</h3>
+                                  <p className="text-gray-500 text-xs">{item.subtitle}</p>
+                              </button>
+                          )
+                      })}
+                  </div>
+              )}
 
               {isLoading && (
                 <div className="flex gap-4 animate-fade-in">
