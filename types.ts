@@ -46,12 +46,31 @@ export interface TransactionData {
     summary: string; // Brief description like "Swap 1 ETH for USDT"
 }
 
+// Binance Types
+export interface BinanceOrder {
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    type: 'MARKET' | 'LIMIT';
+    quantity: number; // Amount in COIN (e.g. 0.001 BTC)
+    leverage?: number; // Only for futures
+    market: 'SPOT' | 'FUTURES';
+    price?: number; // For Limit orders
+    summary: string; // Explanation of the order
+}
+
+export interface BinanceBalance {
+    asset: string;
+    free: number;
+    locked: number;
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'model';
     text?: string;
     data?: CryptoData;
-    transactionData?: TransactionData; // Added field for transaction card
+    transactionData?: TransactionData; // Web3 Tx
+    binanceOrder?: BinanceOrder; // Binance Tx
     isLoading?: boolean;
 }
 

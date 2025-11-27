@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { CryptoData, ChatMessage, PortfolioItem, PricePoint, LongShortData, TransactionData } from "../types";
+import { CryptoData, ChatMessage, PortfolioItem, PricePoint, LongShortData, TransactionData, BinanceOrder } from "../types";
+import { getBinancePrice } from "./binanceService";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -72,6 +73,21 @@ const transactionSchema: Schema = {
     summary: { type: Type.STRING }
   },
   required: ["type", "token", "amount", "toAddress", "network", "estimatedGas", "summary"]
+};
+
+const binanceOrderSchema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+        symbol: { type: Type.STRING, description: "Trading pair, e.g. BTCUSDT" },
+        side: { type: Type.STRING, enum: ["BUY", "SELL"] },
+        type: { type: Type.STRING, enum: ["MARKET", "LIMIT"] },
+        quantity: { type: Type.NUMBER, description: "Order quantity in the COIN asset (e.g. BTC amount)" },
+        leverage: { type: Type.NUMBER, description: "Leverage for futures. Default to 1 for spot." },
+        market: { type: Type.STRING, enum: ["SPOT", "FUTURES"] },
+        price: { type: Type.NUMBER, description: "Limit price, required for LIMIT orders" },
+        summary: { type: Type.STRING, description: "Explanation of the trade" }
+    },
+    required: ["symbol", "side", "type", "quantity", "market", "summary"]
 };
 
 // --- REAL DATA FETCHING FUNCTIONS ---
@@ -283,6 +299,65 @@ export const createTransactionPreview = async (userText: string): Promise<Transa
     }
 }
 
+// --- BINANCE AGENT ---
+
+export const createBinanceOrderPreview = async (userText: string): Promise<BinanceOrder> => {
+    // 1. Fetch current price context if mentioned
+    let currentPriceHint = "";
+    // Simple heuristic to extract symbol to fetch price
+    const words = userText.toUpperCase().split(' ');
+    const symbolFound = words.find(w => w === 'BTC' || w === 'ETH' || w === 'SOL' || w === 'BNB');
+    if (symbolFound) {
+        const p = await getBinancePrice(`${symbolFound}USDT`);
+        if (p) currentPriceHint = `Current ${symbolFound}USDT Price: ${p}. Use this to calculate quantity if user specifies amount in USDT.`;
+    }
+
+    const systemPrompt = `
+      You are a Binance Trading Agent. Convert the user's natural language command into a structured JSON order.
+      
+      CONTEXT: ${currentPriceHint}
+
+      Rules:
+      1. **Symbol**: Always convert to Binance Pair format (e.g. BTC -> BTCUSDT). If not specified, infer from context or fail.
+      2. **Market**: If user mentions "Long", "Short", "Leverage", or "Future", set market to "FUTURES". Otherwise "SPOT".
+      3. **Side**: Long/Buy -> BUY. Short/Sell -> SELL.
+      4. **Quantity**: 
+         - Orders MUST be in the COIN asset (e.g. BTC), NOT USDT.
+         - If user says "Long 10 USDT of BTC", and price is 50000, quantity = 10 / 50000 = 0.0002.
+         - Calculate this precisely.
+      5. **Leverage**: Default to 1 for SPOT. If FUTURES and not specified, default to 20. If specified (e.g. "x100"), use that.
+      6. **Type**: Default to MARKET unless a specific price ("at 50k") is mentioned, then LIMIT.
+
+      Example: "Long 10 usdt leverage 1000 btc" 
+      -> Market: FUTURES, Symbol: BTCUSDT, Side: BUY, Leverage: 1000, Quantity: (10 * 1000 / Price)? NO.
+      CORRECTION ON QUANTITY: 
+      - If user says "10 USDT margin", Position Size = Margin * Leverage. Quantity = Position Size / Price.
+      - If user says "10 USDT worth", Quantity = 10 / Price.
+      - Assume "10 USDT" in a "Long" command means Initial Margin unless "Position" is specified. 
+      - Formula: (Margin * Leverage) / Price.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `Create order for: "${userText}"`,
+            config: {
+                systemInstruction: systemPrompt,
+                responseMimeType: "application/json",
+                responseSchema: binanceOrderSchema
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text) as BinanceOrder;
+        }
+        throw new Error("Failed to parse binance order");
+    } catch (e) {
+        console.error(e);
+        throw e;
+    }
+}
+
 export async function generateMarketReport(data: CryptoData): Promise<string> {
   try {
     const dataString = JSON.stringify(data, null, 2);
@@ -307,15 +382,16 @@ export async function generateMarketReport(data: CryptoData): Promise<string> {
   }
 }
 
-export const determineIntent = async (userMessage: string): Promise<{ type: 'ANALYZE' | 'CHAT' | 'PORTFOLIO_ANALYSIS' | 'TRANSACTION'; coinName?: string }> => {
+export const determineIntent = async (userMessage: string): Promise<{ type: 'ANALYZE' | 'CHAT' | 'PORTFOLIO_ANALYSIS' | 'TRANSACTION' | 'BINANCE_TRADE'; coinName?: string }> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Classify intent: "${userMessage}".
       1. New coin analysis (e.g. "Analyze BTC", "How is Solana doing") -> {"type": "ANALYZE", "coinName": "CorrectedName"}
       2. Portfolio analysis (e.g. "Check my wallet", "My portfolio") -> {"type": "PORTFOLIO_ANALYSIS"}
-      3. Transaction Request (e.g. "Send 1 ETH", "Swap ETH for USDT", "Buy BTC") -> {"type": "TRANSACTION"}
-      4. General chat -> {"type": "CHAT"}`,
+      3. Web3 Transaction (e.g. "Send 1 ETH", "Swap ETH for USDT") -> {"type": "TRANSACTION"}
+      4. Binance Trade (e.g. "Long BTC", "Short ETH x50", "Buy 100 USDT BTC on Binance") -> {"type": "BINANCE_TRADE"}
+      5. General chat -> {"type": "CHAT"}`,
       config: { responseMimeType: "application/json" }
     });
     return response.text ? JSON.parse(response.text) : { type: 'CHAT' };

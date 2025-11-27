@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { TrendingUp, PieChart, ArrowRightLeft, Search } from 'lucide-react';
-import { ChatMessage, CryptoData, ChatSession, PortfolioItem, TransactionData } from './types';
-import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio, updatePortfolioRealTime, createTransactionPreview } from './services/geminiService';
+import { ChatMessage, CryptoData, ChatSession, PortfolioItem, TransactionData, BinanceOrder } from './types';
+import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio, updatePortfolioRealTime, createTransactionPreview, createBinanceOrderPreview } from './services/geminiService';
 import { connectToMetaMask } from './services/web3Service';
 
 // UI Components
@@ -53,9 +53,9 @@ const SUGGESTED_PROMPTS = [
     color: "text-orange-400"
   },
   {
-    title: "Project Discovery",
-    subtitle: "Research a specific token",
-    prompt: "How is Solana doing fundamentally?",
+    title: "Binance Trade",
+    subtitle: "Futures & Spot on Testnet",
+    prompt: "Long 10 USDT leverage 20 BTC",
     icon: Search,
     color: "text-green-400"
   }
@@ -83,7 +83,7 @@ const App: React.FC = () => {
         { 
           id: 'welcome', 
           role: 'model', 
-          text: 'Hello! I am CryptoInsight AI. I can analyze markets, check your portfolio health, or even help draft web3 transactions. How can I help you today?' 
+          text: 'Hello! I am CryptoInsight AI. I can analyze markets, check your portfolio health, or even help draft web3 transactions and Binance Testnet trades. How can I help you today?' 
         }
       ]
     }
@@ -285,6 +285,17 @@ const App: React.FC = () => {
             text: `I've prepared the transaction for you. Please review the details below.`
         };
         setMessages(prev => [...prev, txMsg]);
+
+      } else if (intent.type === 'BINANCE_TRADE') {
+         setLoadingStatus('creating-transaction'); // reuse existing loading state visually
+         const order: BinanceOrder = await createBinanceOrderPreview(currentInput);
+         const orderMsg: ChatMessage = {
+             id: (Date.now() + 1).toString(),
+             role: 'model',
+             binanceOrder: order,
+             text: `I've prepared the Binance ${order.market} order for you on the Testnet.`
+         };
+         setMessages(prev => [...prev, orderMsg]);
 
       } else {
         setLoadingStatus('thinking');
