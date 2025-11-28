@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowRight, Bot, BarChart3, Zap, Shield, Sparkles, PieChart, Layers, CheckCircle2, ChevronDown, ChevronUp, Terminal, Cpu, Globe } from 'lucide-react';
+import { ArrowRight, Bot, BarChart3, Zap, Shield, Sparkles, PieChart, Layers, CheckCircle2, ChevronDown, ChevronUp, Terminal, Cpu, Globe, Wallet, TrendingUp, Activity } from 'lucide-react';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -192,6 +192,131 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                             <div className="w-full py-3 bg-blue-600 rounded-lg text-center font-bold text-sm">
                                 Confirm Transaction
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Feature 3: Portfolio Guard */}
+            <div className="flex flex-col md:flex-row items-center gap-12">
+                <div className="flex-1 space-y-6">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold uppercase">
+                        Portfolio Guard
+                    </div>
+                    <h2 className="text-3xl md:text-4xl font-bold">Smart Portfolio Tracking</h2>
+                    <p className="text-gray-400 text-lg leading-relaxed">
+                        Connect your wallet for instant analysis. The agent evaluates your diversification, checks for risky assets, and suggests rebalancing strategies to protect your gains.
+                    </p>
+                    <ul className="space-y-3 pt-4">
+                        <CheckItem text="Real-time PNL Tracking" />
+                        <CheckItem text="Risk Exposure Assessment" />
+                        <CheckItem text="Multi-Chain Wallet Support" />
+                    </ul>
+                </div>
+                <div className="flex-1 w-full relative group">
+                    <div className="absolute inset-0 bg-green-600/20 blur-[80px] rounded-full group-hover:bg-green-600/30 transition-all duration-700" />
+                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-6 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500 max-w-sm mx-auto">
+                        {/* Abstract Wallet Card */}
+                        <div className="space-y-6">
+                             <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                                <div className="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center">
+                                    <Wallet className="w-5 h-5 text-green-400" />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">Total Balance</div>
+                                    <div className="text-xl font-bold text-white">$42,593.00</div>
+                                </div>
+                             </div>
+                             <div className="space-y-4">
+                                {/* Asset 1 */}
+                                <div>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-300">Bitcoin</span>
+                                        <span className="text-white font-medium">$28,000</span>
+                                    </div>
+                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                        <div className="h-full w-[65%] bg-green-500 rounded-full"></div>
+                                    </div>
+                                </div>
+                                {/* Asset 2 */}
+                                <div>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-300">Ethereum</span>
+                                        <span className="text-white font-medium">$12,400</span>
+                                    </div>
+                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                        <div className="h-full w-[30%] bg-blue-500 rounded-full"></div>
+                                    </div>
+                                </div>
+                                {/* Asset 3 */}
+                                <div>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-300">Solana</span>
+                                        <span className="text-white font-medium">$2,193</span>
+                                    </div>
+                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                        <div className="h-full w-[15%] bg-purple-500 rounded-full"></div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Feature 4: Deep Analysis */}
+            <div className="flex flex-col md:flex-row-reverse items-center gap-12">
+                <div className="flex-1 space-y-6">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase">
+                        Deep Data
+                    </div>
+                    <h2 className="text-3xl md:text-4xl font-bold">Institutional-Grade Analysis</h2>
+                    <p className="text-gray-400 text-lg leading-relaxed">
+                        Go deeper than just price. Our agents aggregate sentiment scores, Long/Short ratios, and on-chain metrics to generate comprehensive reports for any coin.
+                    </p>
+                    <ul className="space-y-3 pt-4">
+                        <CheckItem text="Fear & Greed Index Integration" />
+                        <CheckItem text="Exchange Long/Short Ratios" />
+                        <CheckItem text="Project Scoring Radar" />
+                    </ul>
+                </div>
+                <div className="flex-1 w-full relative group">
+                    <div className="absolute inset-0 bg-cyan-600/20 blur-[80px] rounded-full group-hover:bg-cyan-600/30 transition-all duration-700" />
+                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-4 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500">
+                        {/* Abstract Dashboard */}
+                        <div className="grid grid-cols-2 gap-4">
+                             {/* Sentiment Widget */}
+                             <div className="col-span-1 bg-[#0a0a0a] rounded-xl p-3 border border-white/5 flex flex-col items-center justify-center gap-2">
+                                <span className="text-[10px] text-gray-500 uppercase">Sentiment</span>
+                                <div className="w-16 h-16 rounded-full border-4 border-gray-800 border-t-cyan-400 border-r-cyan-400 rotate-45 flex items-center justify-center">
+                                    <span className="text-lg font-bold text-white -rotate-45">72</span>
+                                </div>
+                                <span className="text-xs text-cyan-400">Greed</span>
+                             </div>
+                             {/* L/S Widget */}
+                             <div className="col-span-1 bg-[#0a0a0a] rounded-xl p-3 border border-white/5 flex flex-col justify-between">
+                                <span className="text-[10px] text-gray-500 uppercase mb-2">Long/Short</span>
+                                <div className="flex items-end gap-1 h-12">
+                                    <div className="w-2 bg-green-500 h-[80%] rounded-t-sm"></div>
+                                    <div className="w-2 bg-red-500 h-[40%] rounded-t-sm"></div>
+                                    <div className="w-2 bg-green-500 h-[60%] rounded-t-sm"></div>
+                                    <div className="w-2 bg-red-500 h-[30%] rounded-t-sm"></div>
+                                    <div className="w-2 bg-green-500 h-[90%] rounded-t-sm"></div>
+                                </div>
+                             </div>
+                             {/* Wide Widget */}
+                             <div className="col-span-2 bg-[#0a0a0a] rounded-xl p-3 border border-white/5 flex items-center justify-between">
+                                 <div className="flex items-center gap-3">
+                                     <Activity className="w-5 h-5 text-cyan-400" />
+                                     <div>
+                                         <div className="text-xs text-gray-400">Project Score</div>
+                                         <div className="text-sm font-bold text-white">A+ (92/100)</div>
+                                     </div>
+                                 </div>
+                                 <div className="h-8 w-24 bg-gradient-to-r from-cyan-900/20 to-cyan-500/20 rounded-md border border-cyan-500/30 flex items-center justify-center">
+                                     <span className="text-xs text-cyan-400 font-bold">Strong Buy</span>
+                                 </div>
+                             </div>
                         </div>
                     </div>
                 </div>
