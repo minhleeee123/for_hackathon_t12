@@ -19,6 +19,7 @@ import ProfileView from './components/profile/ProfileView';
 import MessageItem from './components/chat/MessageItem';
 import InputArea from './components/chat/InputArea';
 import LoadingIndicator from './components/ui/LoadingIndicator';
+import LandingPage from './components/LandingPage';
 
 // --- Types & Mock Data for Profile ---
 
@@ -65,6 +66,9 @@ const SUGGESTED_PROMPTS = [
 // --- Main App Component ---
 
 const App: React.FC = () => {
+  // New State for Landing Page
+  const [showLanding, setShowLanding] = useState(true);
+
   const [input, setInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<'chat' | 'profile'>('chat');
@@ -312,6 +316,12 @@ const App: React.FC = () => {
       setLoadingStatus('');
     }
   };
+
+  // --- RENDER ---
+
+  if (showLanding) {
+    return <LandingPage onStart={() => setShowLanding(false)} />;
+  }
 
   return (
     <div className="flex h-screen w-full bg-[#131314] text-[#e3e3e3] overflow-hidden font-sans selection:bg-blue-500/30 relative">
