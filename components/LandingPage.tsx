@@ -187,37 +187,37 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                                     
                                     {/* Series of Candles */}
                                     {/* C1: Green */}
-                                    <div className="flex flex-col items-center w-3 h-[40%] mb-12">
+                                    <div className="flex flex-col items-center w-3 h-[40%] mb-12 relative">
                                         <div className="w-[1px] h-full bg-green-500/50"></div>
                                         <div className="w-full h-[60%] bg-green-500 absolute bottom-[20%] rounded-[1px]"></div>
                                     </div>
                                     
                                     {/* C2: Red */}
-                                    <div className="flex flex-col items-center w-3 h-[35%] mb-16">
+                                    <div className="flex flex-col items-center w-3 h-[35%] mb-16 relative">
                                         <div className="w-[1px] h-full bg-red-500/50"></div>
                                         <div className="w-full h-[40%] bg-red-500 absolute bottom-[30%] rounded-[1px]"></div>
                                     </div>
 
                                     {/* C3: Green */}
-                                    <div className="flex flex-col items-center w-3 h-[50%] mb-10">
+                                    <div className="flex flex-col items-center w-3 h-[50%] mb-10 relative">
                                         <div className="w-[1px] h-full bg-green-500/50"></div>
                                         <div className="w-full h-[70%] bg-green-500 absolute bottom-[15%] rounded-[1px]"></div>
                                     </div>
 
                                     {/* C4: Green Big */}
-                                    <div className="flex flex-col items-center w-3 h-[60%] mb-14">
+                                    <div className="flex flex-col items-center w-3 h-[60%] mb-14 relative">
                                         <div className="w-[1px] h-full bg-green-500/50"></div>
                                         <div className="w-full h-[80%] bg-green-500 absolute bottom-[10%] rounded-[1px]"></div>
                                     </div>
 
                                     {/* C5: Red Dip */}
-                                    <div className="flex flex-col items-center w-3 h-[30%] mb-24">
+                                    <div className="flex flex-col items-center w-3 h-[30%] mb-24 relative">
                                         <div className="w-[1px] h-full bg-red-500/50"></div>
                                         <div className="w-full h-[50%] bg-red-500 absolute bottom-[25%] rounded-[1px]"></div>
                                     </div>
 
                                      {/* C6: Green Recovery */}
-                                    <div className="flex flex-col items-center w-3 h-[45%] mb-20">
+                                    <div className="flex flex-col items-center w-3 h-[45%] mb-20 relative">
                                         <div className="w-[1px] h-full bg-green-500/50"></div>
                                         <div className="w-full h-[60%] bg-green-500 absolute bottom-[20%] rounded-[1px]"></div>
                                     </div>
@@ -230,13 +230,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                                     </div>
 
                                     {/* C8: Consolidation (Red) */}
-                                    <div className="flex flex-col items-center w-3 h-[20%] mb-[160px]">
+                                    <div className="flex flex-col items-center w-3 h-[20%] mb-[160px] relative">
                                         <div className="w-[1px] h-full bg-red-500/50"></div>
                                         <div className="w-full h-[60%] bg-red-500 absolute bottom-[20%] rounded-[1px]"></div>
                                     </div>
 
                                     {/* C9: Consolidation (Red) */}
-                                    <div className="flex flex-col items-center w-3 h-[18%] mb-[155px]">
+                                    <div className="flex flex-col items-center w-3 h-[18%] mb-[155px] relative">
                                         <div className="w-[1px] h-full bg-red-500/50"></div>
                                         <div className="w-full h-[50%] bg-red-500 absolute bottom-[25%] rounded-[1px]"></div>
                                     </div>
