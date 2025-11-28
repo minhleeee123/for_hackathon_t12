@@ -8,13 +8,26 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
   return (
-    <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden font-sans selection:bg-blue-500/30 relative">
       
-      {/* Background Gradients - Adjusted for seamless look */}
-      <div className="fixed inset-0 pointer-events-none">
+      {/* 1. FIXED Background Gradients (Top of viewport) */}
+      <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-3000" />
         <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-purple-600/5 rounded-full blur-[120px] mix-blend-screen" />
         <div className="absolute top-[40%] left-[-10%] w-[400px] h-[400px] bg-cyan-600/5 rounded-full blur-[100px] mix-blend-screen" />
+      </div>
+
+      {/* 2. SCROLLING Background Ambience (Bridges the gaps down the page) */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+         {/* Bridge: How It Works -> Deep Dive */}
+         <div className="absolute top-[1000px] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-900/5 rounded-full blur-[100px]" />
+         
+         {/* Bridge: Deep Dive internal */}
+         <div className="absolute top-[1800px] right-[-20%] w-[800px] h-[800px] bg-purple-900/5 rounded-full blur-[100px]" />
+         <div className="absolute top-[2600px] left-[-20%] w-[800px] h-[800px] bg-green-900/5 rounded-full blur-[100px]" />
+
+         {/* Bridge: Deep Dive -> Grid Features */}
+         <div className="absolute top-[3500px] left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-cyan-900/5 rounded-full blur-[120px]" />
       </div>
 
       {/* Navbar */}
@@ -72,8 +85,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
 
       </main>
 
-      {/* Workflow Section - Removed bg color for seamlessness */}
-      <section className="py-24 relative">
+      {/* Workflow Section */}
+      <section className="py-24 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
@@ -106,27 +119,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
         </div>
       </section>
 
-      {/* Deep Dive Features - Split Layouts */}
-      <section className="py-24 overflow-hidden relative">
+      {/* Deep Dive Features - Split Layouts with Connector Line */}
+      <section className="py-24 relative z-10">
+        
+        {/* Vertical Connecting Line (Timeline Style) */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-blue-500/10 to-transparent hidden md:block" />
+
         <div className="max-w-7xl mx-auto px-6 space-y-32">
             
             {/* Feature 1: Vision */}
-            <div className="flex flex-col md:flex-row items-center gap-12">
-                <div className="flex-1 space-y-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase">
+            <div className="flex flex-col md:flex-row items-center gap-12 relative">
+                <div className="flex-1 space-y-6 md:text-right md:pr-12">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase md:ml-auto">
                         Multimodal AI
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold">See the Market like a Pro</h2>
                     <p className="text-gray-400 text-lg leading-relaxed">
                         Don't just look at numbers. Upload screenshots of charts, and our Vision Agent will identify support/resistance lines, candlestick patterns, and potential breakout zones automatically.
                     </p>
-                    <ul className="space-y-3 pt-4">
+                    <ul className="space-y-3 pt-4 flex flex-col md:items-end">
                         <CheckItem text="Pattern Recognition (Head & Shoulders, Flags)" />
                         <CheckItem text="Auto-Support/Resistance Levels" />
                         <CheckItem text="Actionable Trading Setups" />
                     </ul>
                 </div>
-                <div className="flex-1 w-full relative group">
+                
+                {/* Center Node */}
+                <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#050505] border-2 border-purple-500 z-20 shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
+
+                <div className="flex-1 w-full relative group md:pl-12">
                     <div className="absolute inset-0 bg-purple-600/20 blur-[80px] rounded-full group-hover:bg-purple-600/30 transition-all duration-700" />
                     <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-2 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
                         <div className="aspect-[4/3] bg-[#0a0a0a] rounded-lg overflow-hidden relative flex flex-col items-center justify-center border border-white/5">
@@ -147,8 +168,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             </div>
 
             {/* Feature 2: Web3 Transaction */}
-            <div className="flex flex-col md:flex-row-reverse items-center gap-12">
-                <div className="flex-1 space-y-6">
+            <div className="flex flex-col md:flex-row-reverse items-center gap-12 relative">
+                <div className="flex-1 space-y-6 md:pl-12">
                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold uppercase">
                         Web3 Native
                     </div>
@@ -162,11 +183,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                         <CheckItem text="Supports Ethereum, BSC, Polygon" />
                     </ul>
                 </div>
-                <div className="flex-1 w-full relative group">
+
+                {/* Center Node */}
+                <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#050505] border-2 border-orange-500 z-20 shadow-[0_0_20px_rgba(249,115,22,0.5)]" />
+
+                <div className="flex-1 w-full relative group md:text-right md:pr-12">
                      <div className="absolute inset-0 bg-orange-600/20 blur-[80px] rounded-full group-hover:bg-orange-600/30 transition-all duration-700" />
-                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-6 shadow-2xl -rotate-3 hover:rotate-0 transition-transform duration-500 max-w-md mx-auto">
+                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-6 shadow-2xl -rotate-3 hover:rotate-0 transition-transform duration-500 max-w-md mx-auto md:mr-0">
                         {/* Abstract Transaction Card */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <div className="flex justify-between items-center text-sm text-gray-400">
                                 <span>Swap</span>
                                 <span className="text-white font-bold">Ethereum Mainnet</span>
@@ -191,26 +216,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             </div>
 
             {/* Feature 3: Portfolio Guard */}
-            <div className="flex flex-col md:flex-row items-center gap-12">
-                <div className="flex-1 space-y-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold uppercase">
+            <div className="flex flex-col md:flex-row items-center gap-12 relative">
+                <div className="flex-1 space-y-6 md:text-right md:pr-12">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-semibold uppercase md:ml-auto">
                         Portfolio Guard
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold">Smart Portfolio Tracking</h2>
                     <p className="text-gray-400 text-lg leading-relaxed">
                         Connect your wallet for instant analysis. The agent evaluates your diversification, checks for risky assets, and suggests rebalancing strategies to protect your gains.
                     </p>
-                    <ul className="space-y-3 pt-4">
+                    <ul className="space-y-3 pt-4 flex flex-col md:items-end">
                         <CheckItem text="Real-time PNL Tracking" />
                         <CheckItem text="Risk Exposure Assessment" />
                         <CheckItem text="Multi-Chain Wallet Support" />
                     </ul>
                 </div>
-                <div className="flex-1 w-full relative group">
+
+                {/* Center Node */}
+                <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#050505] border-2 border-green-500 z-20 shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
+
+                <div className="flex-1 w-full relative group md:pl-12">
                     <div className="absolute inset-0 bg-green-600/20 blur-[80px] rounded-full group-hover:bg-green-600/30 transition-all duration-700" />
-                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-6 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500 max-w-sm mx-auto">
+                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-6 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500 max-w-sm mx-auto md:ml-0">
                         {/* Abstract Wallet Card */}
-                        <div className="space-y-6">
+                        <div className="space-y-6 text-left">
                              <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                                 <div className="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center">
                                     <Wallet className="w-5 h-5 text-green-400" />
@@ -241,16 +270,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                                         <div className="h-full w-[30%] bg-blue-500 rounded-full"></div>
                                     </div>
                                 </div>
-                                {/* Asset 3 */}
-                                <div>
-                                    <div className="flex justify-between text-sm mb-1">
-                                        <span className="text-gray-300">Solana</span>
-                                        <span className="text-white font-medium">$2,193</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                        <div className="h-full w-[15%] bg-purple-500 rounded-full"></div>
-                                    </div>
-                                </div>
                              </div>
                         </div>
                     </div>
@@ -258,8 +277,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             </div>
 
             {/* Feature 4: Deep Analysis */}
-            <div className="flex flex-col md:flex-row-reverse items-center gap-12">
-                <div className="flex-1 space-y-6">
+            <div className="flex flex-col md:flex-row-reverse items-center gap-12 relative">
+                <div className="flex-1 space-y-6 md:pl-12">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase">
                         Deep Data
                     </div>
@@ -273,11 +292,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                         <CheckItem text="Project Scoring Radar" />
                     </ul>
                 </div>
-                <div className="flex-1 w-full relative group">
+
+                {/* Center Node */}
+                <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#050505] border-2 border-cyan-500 z-20 shadow-[0_0_20px_rgba(6,182,212,0.5)]" />
+
+                <div className="flex-1 w-full relative group md:text-right md:pr-12">
                     <div className="absolute inset-0 bg-cyan-600/20 blur-[80px] rounded-full group-hover:bg-cyan-600/30 transition-all duration-700" />
-                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-4 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500">
+                    <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-4 shadow-2xl -rotate-2 hover:rotate-0 transition-transform duration-500 max-w-sm mx-auto md:mr-0">
                         {/* Abstract Dashboard */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4 text-left">
                              {/* Sentiment Widget */}
                              <div className="col-span-1 bg-[#0a0a0a] rounded-xl p-3 border border-white/5 flex flex-col items-center justify-center gap-2">
                                 <span className="text-[10px] text-gray-500 uppercase">Sentiment</span>
@@ -318,8 +341,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
         </div>
       </section>
 
-      {/* Grid Features - Removed bg color for seamlessness */}
-      <section className="max-w-7xl mx-auto px-6 py-24 relative">
+      {/* Grid Features */}
+      <section className="max-w-7xl mx-auto px-6 py-24 relative z-10">
         <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Everything you need</h2>
         </div>
@@ -348,7 +371,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
       </section>
 
       {/* FAQ Section */}
-      <section className="max-w-3xl mx-auto px-6 py-24 relative">
+      <section className="max-w-3xl mx-auto px-6 py-24 relative z-10">
          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
          <div className="space-y-4">
             <FAQItem 
@@ -366,9 +389,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
          </div>
       </section>
 
-      {/* Bottom CTA */}
-      <section className="py-24 relative overflow-hidden">
-         <div className="absolute inset-0 bg-blue-900/10 pointer-events-none" />
+      {/* Bottom CTA - Gradient Background for Seamless Footer Transition */}
+      <section className="py-32 relative overflow-hidden z-10">
+         {/* Gradient Background */}
+         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 via-transparent to-transparent pointer-events-none" />
+         
          <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to upgrade your trading?</h2>
             <p className="text-xl text-gray-400 mb-10">Join thousands of traders using AI to navigate the market.</p>
@@ -381,8 +406,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
          </div>
       </section>
 
-      {/* Footer - Transparent bg to blend with seamless theme */}
-      <footer className="py-12 relative border-t border-white/5">
+      {/* Footer */}
+      <footer className="py-12 relative border-t border-white/5 z-10 bg-[#050505]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-blue-500" />
