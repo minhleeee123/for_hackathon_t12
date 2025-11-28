@@ -6,33 +6,35 @@ import { TransactionData } from "../../types";
 const transactionSchema: Schema = {
   type: Type.OBJECT,
   properties: {
-    type: { type: Type.STRING, enum: ["SEND", "SWAP", "BUY", "SELL"] },
-    token: { type: Type.STRING },
-    amount: { type: Type.NUMBER },
-    toAddress: { type: Type.STRING },
-    network: { type: Type.STRING },
-    estimatedGas: { type: Type.STRING },
+    type: { type: Type.STRING, enum: ["SEND", "SWAP"] },
+    token: { type: Type.STRING, description: "Source token symbol (e.g. ETH). Null if unknown." },
+    targetToken: { type: Type.STRING, description: "Target token for SWAP. Null if SEND or unknown." },
+    amount: { type: Type.NUMBER, description: "Amount to transact. Null if unknown." },
+    toAddress: { type: Type.STRING, description: "Destination address. Null if unknown." },
+    network: { type: Type.STRING, description: "Blockchain network. Null if unknown." },
     summary: { type: Type.STRING }
   },
-  required: ["type", "token", "amount", "toAddress", "network", "estimatedGas", "summary"]
+  required: ["type", "summary"]
 };
 
 export const createTransactionPreview = async (userText: string): Promise<TransactionData> => {
     const systemPrompt = `
-      You are a Web3 Transaction Agent. Your job is to extract transaction details from the user's natural language request.
+      You are a Web3 Transaction Agent. Your job is to extract transaction details for SEND or SWAP operations.
       
-      Rules:
-      1. Detect intent: SEND (transfer tokens), SWAP (trade tokens), BUY, SELL.
-      2. Extract 'token' (default to ETH if unclear but implied), 'amount'.
-      3. For 'toAddress':
-         - If user provides a 0x address, use it.
-         - If SWAP/BUY/SELL, use the Uniswap V2 Router address: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'.
-         - If SEND and no address provided, use a placeholder '0x0000...0000' but mention in summary user needs to verify.
-      4. Network: Assume 'Ethereum Mainnet' or 'Sepolia Testnet' based on context, default to 'Ethereum Mainnet'.
-      5. Estimated Gas: Estimate standard ETH gas (e.g. 0.002 ETH).
+      RULES:
+      1. **Supported Types**: Only 'SEND' or 'SWAP'. Ignore 'BUY' or 'SELL'.
+      2. **No Guessing**: If the user does not provide a piece of information (like address, amount, or network), return null for that field. **DO NOT** make up addresses or amounts.
+      3. **Extraction**:
+         - 'token': The asset being sent or swapped from.
+         - 'targetToken': The asset being received (only for SWAP).
+         - 'amount': The numerical value.
+         - 'toAddress': The recipient wallet address (only for SEND).
+         - 'network': The blockchain network (e.g., Ethereum, Polygon).
       
-      Example: "Swap 1 ETH for USDT" -> Type: SWAP, Token: ETH, Amount: 1, To: RouterAddress.
-      Example: "Send 0.5 ETH to 0x123..." -> Type: SEND, Token: ETH, Amount: 0.5, To: 0x123...
+      Examples:
+      - "Send ETH" -> { type: "SEND", token: "ETH", amount: null, toAddress: null, network: null }
+      - "Swap 1 ETH to USDT" -> { type: "SWAP", token: "ETH", targetToken: "USDT", amount: 1, network: null }
+      - "Send 0.5 SOL to 0x123... on Solana" -> { type: "SEND", token: "SOL", amount: 0.5, toAddress: "0x123...", network: "Solana" }
     `;
 
     try {
