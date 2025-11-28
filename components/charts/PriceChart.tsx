@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Maximize2, X, Send, Camera, Bot, Loader2 } from 'lucide-react';
-import { analyzeChartImage } from '../../services/geminiService';
+import { analyzeChartImage } from '../../services/agents/visionAgent';
 
 interface PriceChartProps {
   symbol: string; // e.g. "BTC", "SOL"

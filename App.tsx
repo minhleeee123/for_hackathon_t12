@@ -2,7 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { TrendingUp, PieChart, ArrowRightLeft } from 'lucide-react';
 import { ChatMessage, CryptoData, ChatSession, PortfolioItem, TransactionData } from './types';
-import { analyzeCoin, generateMarketReport, determineIntent, chatWithModel, analyzePortfolio, updatePortfolioRealTime, createTransactionPreview } from './services/geminiService';
+
+// Modular Services Imports
+import { analyzeCoin, generateMarketReport } from './services/agents/marketAgent';
+import { analyzePortfolio } from './services/agents/portfolioAgent';
+import { createTransactionPreview } from './services/agents/transactionAgent';
+import { determineIntent, chatWithModel } from './services/agents/chatAgent';
+import { updatePortfolioRealTime } from './services/data/marketData';
+
 import { connectToMetaMask } from './services/web3Service';
 
 // UI Components
