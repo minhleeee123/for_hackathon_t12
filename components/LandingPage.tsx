@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowRight, Bot, BarChart3, Zap, Shield, Sparkles, PieChart, Layers, CheckCircle2, ChevronDown, ChevronUp, Terminal, Cpu, Globe, Wallet, Activity } from 'lucide-react';
+import { ArrowRight, Bot, BarChart3, Zap, Shield, Sparkles, PieChart, Layers, CheckCircle2, ChevronDown, ChevronUp, Terminal, Cpu, Globe, Wallet, Activity, ScanLine, Maximize, Search } from 'lucide-react';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -127,7 +127,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
 
         <div className="max-w-7xl mx-auto px-6 space-y-32">
             
-            {/* Feature 1: Vision */}
+            {/* Feature 1: Vision - REALISTIC CHART */}
             <div className="flex flex-col md:flex-row items-center gap-12 relative">
                 <div className="flex-1 space-y-6 md:text-right md:pr-12">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase md:ml-auto">
@@ -150,18 +150,137 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                 <div className="flex-1 w-full relative group md:pl-12">
                     <div className="absolute inset-0 bg-purple-600/20 blur-[80px] rounded-full group-hover:bg-purple-600/30 transition-all duration-700" />
                     <div className="relative bg-[#131314] rounded-2xl border border-white/10 p-2 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
-                        <div className="aspect-[4/3] bg-[#0a0a0a] rounded-lg overflow-hidden relative flex flex-col items-center justify-center border border-white/5">
-                            {/* Abstract Chart UI */}
-                            <div className="w-full h-1/2 flex items-end gap-1 px-8 pb-4 opacity-50">
-                                <div className="w-4 h-12 bg-green-500/50 rounded-sm"></div>
-                                <div className="w-4 h-20 bg-green-500/50 rounded-sm"></div>
-                                <div className="w-4 h-16 bg-red-500/50 rounded-sm"></div>
-                                <div className="w-4 h-24 bg-green-500/50 rounded-sm"></div>
-                                <div className="w-4 h-10 bg-red-500/50 rounded-sm"></div>
+                        <div className="aspect-[4/3] bg-[#0d0e10] rounded-lg overflow-hidden relative flex flex-col border border-white/5">
+                            
+                            {/* Pro Grid Background */}
+                            <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+
+                            {/* Chart Header */}
+                            <div className="flex items-center justify-between p-3 border-b border-white/5 bg-[#0d0e10]/80 backdrop-blur-sm z-10 relative">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                    <div className="flex flex-col">
+                                         <span className="text-xs font-bold text-gray-200">BTC/USDT</span>
+                                         <span className="text-[9px] text-gray-500 font-mono">BINANCE</span>
+                                    </div>
+                                    <div className="px-1.5 py-0.5 bg-white/5 rounded text-[10px] text-gray-400">1H</div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <ScanLine className="w-3.5 h-3.5 text-purple-400" />
+                                    <Maximize className="w-3.5 h-3.5 text-gray-500" />
+                                </div>
                             </div>
-                            <div className="absolute top-4 right-4 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-xs border border-purple-500/30 backdrop-blur-md">
-                                Bullish Flag Detected
+
+                            {/* Chart Area */}
+                            <div className="flex-1 relative w-full h-full overflow-hidden px-4 pt-4 pb-12">
+                                
+                                {/* SVG Moving Averages */}
+                                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-50" preserveAspectRatio="none">
+                                    {/* MA 50 (Blue) */}
+                                    <path d="M0 250 C 50 240, 100 220, 150 200 C 200 180, 250 160, 300 170 C 350 180, 400 200, 450 150 C 500 100, 550 50, 600 40" stroke="#3b82f6" strokeWidth="2" fill="none" />
+                                    {/* MA 20 (Yellow) */}
+                                    <path d="M0 220 C 60 200, 120 180, 180 150 C 240 120, 300 140, 360 120 C 420 100, 480 80, 600 20" stroke="#eab308" strokeWidth="2" fill="none" />
+                                </svg>
+
+                                {/* Realistic Candles Container */}
+                                <div className="flex items-end justify-between h-full w-full relative z-10 px-2">
+                                    
+                                    {/* Series of Candles */}
+                                    {/* C1: Green */}
+                                    <div className="flex flex-col items-center w-3 h-[40%] mb-12">
+                                        <div className="w-[1px] h-full bg-green-500/50"></div>
+                                        <div className="w-full h-[60%] bg-green-500 absolute bottom-[20%] rounded-[1px]"></div>
+                                    </div>
+                                    
+                                    {/* C2: Red */}
+                                    <div className="flex flex-col items-center w-3 h-[35%] mb-16">
+                                        <div className="w-[1px] h-full bg-red-500/50"></div>
+                                        <div className="w-full h-[40%] bg-red-500 absolute bottom-[30%] rounded-[1px]"></div>
+                                    </div>
+
+                                    {/* C3: Green */}
+                                    <div className="flex flex-col items-center w-3 h-[50%] mb-10">
+                                        <div className="w-[1px] h-full bg-green-500/50"></div>
+                                        <div className="w-full h-[70%] bg-green-500 absolute bottom-[15%] rounded-[1px]"></div>
+                                    </div>
+
+                                    {/* C4: Green Big */}
+                                    <div className="flex flex-col items-center w-3 h-[60%] mb-14">
+                                        <div className="w-[1px] h-full bg-green-500/50"></div>
+                                        <div className="w-full h-[80%] bg-green-500 absolute bottom-[10%] rounded-[1px]"></div>
+                                    </div>
+
+                                    {/* C5: Red Dip */}
+                                    <div className="flex flex-col items-center w-3 h-[30%] mb-24">
+                                        <div className="w-[1px] h-full bg-red-500/50"></div>
+                                        <div className="w-full h-[50%] bg-red-500 absolute bottom-[25%] rounded-[1px]"></div>
+                                    </div>
+
+                                     {/* C6: Green Recovery */}
+                                    <div className="flex flex-col items-center w-3 h-[45%] mb-20">
+                                        <div className="w-[1px] h-full bg-green-500/50"></div>
+                                        <div className="w-full h-[60%] bg-green-500 absolute bottom-[20%] rounded-[1px]"></div>
+                                    </div>
+
+                                    {/* C7: The Flag Pole (Huge Green) */}
+                                    <div className="flex flex-col items-center w-3 h-[75%] mb-8 relative group">
+                                         <div className="absolute -top-4 text-[9px] text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">Vol</div>
+                                        <div className="w-[1px] h-full bg-green-500/50"></div>
+                                        <div className="w-full h-[85%] bg-green-500 absolute bottom-[5%] rounded-[1px] shadow-[0_0_10px_rgba(34,197,94,0.4)]"></div>
+                                    </div>
+
+                                    {/* C8: Consolidation (Red) */}
+                                    <div className="flex flex-col items-center w-3 h-[20%] mb-[160px]">
+                                        <div className="w-[1px] h-full bg-red-500/50"></div>
+                                        <div className="w-full h-[60%] bg-red-500 absolute bottom-[20%] rounded-[1px]"></div>
+                                    </div>
+
+                                    {/* C9: Consolidation (Red) */}
+                                    <div className="flex flex-col items-center w-3 h-[18%] mb-[155px]">
+                                        <div className="w-[1px] h-full bg-red-500/50"></div>
+                                        <div className="w-full h-[50%] bg-red-500 absolute bottom-[25%] rounded-[1px]"></div>
+                                    </div>
+
+                                     {/* C10: The Breakout (Green) */}
+                                    <div className="flex flex-col items-center w-3 h-[50%] mb-[140px] relative">
+                                        <div className="w-[1px] h-full bg-green-500/50"></div>
+                                        <div className="w-full h-[80%] bg-green-500 absolute bottom-[10%] rounded-[1px] shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse"></div>
+                                        {/* Target Bubble */}
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-20">
+                                            TP: $69k
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* AI Overlay Lines */}
+                                <div className="absolute inset-0 pointer-events-none">
+                                    {/* Resistance Trend Line */}
+                                    <div className="absolute top-[25%] right-[10%] w-[25%] h-[1px] bg-purple-500 border-t border-dashed border-purple-400 rotate-[5deg] origin-left shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+                                    <span className="absolute top-[21%] right-[12%] text-[9px] text-purple-300 font-mono bg-[#0d0e10] px-1">Resistance</span>
+
+                                    {/* Support Trend Line */}
+                                    <div className="absolute top-[35%] right-[10%] w-[25%] h-[1px] bg-purple-500 border-t border-dashed border-purple-400 rotate-[5deg] origin-left shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+                                    <span className="absolute top-[40%] right-[25%] text-[9px] text-purple-300 font-mono bg-[#0d0e10] px-1">Support</span>
+                                </div>
                             </div>
+                            
+                            {/* Scanning Overlay */}
+                             <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 via-purple-500/10 to-transparent h-[10%] w-full animate-[scan_3s_ease-in-out_infinite] pointer-events-none border-b border-purple-500/30"></div>
+
+                            {/* Bottom Analysis Panel */}
+                            <div className="absolute bottom-4 left-4 right-4 bg-[#131314]/95 backdrop-blur-md border border-purple-500/30 p-2.5 rounded-lg flex items-center gap-3 shadow-2xl z-20">
+                                <div className="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
+                                    <Bot className="w-3.5 h-3.5 text-purple-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                        <span className="text-xs font-bold text-white truncate">Bull Flag Breakout</span>
+                                        <span className="text-[10px] text-green-400 font-mono bg-green-900/30 px-1 rounded ml-2">85%</span>
+                                    </div>
+                                    <div className="text-[10px] text-gray-400 truncate">Entry: $67,200 • Stop: $66,800</div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
