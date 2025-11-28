@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowRight, Bot, BarChart3, Zap, Shield, Sparkles, PieChart, Layers, CheckCircle2, ChevronDown, ChevronUp, Terminal, Cpu, Globe, Wallet, TrendingUp, Activity } from 'lucide-react';
+import { ArrowRight, Bot, BarChart3, Zap, Shield, Sparkles, PieChart, Layers, CheckCircle2, ChevronDown, ChevronUp, Terminal, Cpu, Globe, Wallet, Activity } from 'lucide-react';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -68,14 +68,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             {/* Button Glow */}
             <div className="absolute inset-0 rounded-full ring-2 ring-white/20 group-hover:ring-white/40 transition-all" />
         </button>
-
-        {/* Stats Bar */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16 border-t border-white/5 pt-8 animate-in fade-in duration-1000 delay-200">
-            <StatItem value="$10B+" label="Volume Analyzed" />
-            <StatItem value="50k+" label="AI Predictions" />
-            <StatItem value="24/7" label="Market Uptime" />
-            <StatItem value="100%" label="Secure" />
-        </div>
 
       </main>
 
@@ -354,30 +346,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-24 bg-[#0a0a0a] border-y border-white/5">
-         <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-3xl font-bold text-center mb-16">Trusted by Early Adopters</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <TestimonialCard 
-                    quote="The vision analysis feature is mind-blowing. It spotted a wedge pattern I missed completely."
-                    author="Alex T."
-                    role="Day Trader"
-                />
-                 <TestimonialCard 
-                    quote="Finally, an AI that doesn't just talk but actually prepares the transaction for me. Huge time saver."
-                    author="Sarah K."
-                    role="DeFi User"
-                />
-                 <TestimonialCard 
-                    quote="I use the portfolio health check every morning. It's like having a personal quant analyst."
-                    author="Michael R."
-                    role="HODLer"
-                />
-            </div>
-         </div>
-      </section>
-
       {/* FAQ Section */}
       <section className="max-w-3xl mx-auto px-6 py-24">
          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
@@ -434,13 +402,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
 
 // --- Sub-Components ---
 
-const StatItem = ({ value, label }: { value: string, label: string }) => (
-    <div className="flex flex-col items-center">
-        <span className="text-3xl md:text-4xl font-bold text-white mb-2">{value}</span>
-        <span className="text-sm text-gray-500 uppercase tracking-wider font-medium">{label}</span>
-    </div>
-);
-
 const WorkflowStep = ({ step, title, desc, icon }: { step: string, title: string, desc: string, icon: React.ReactNode }) => (
     <div className="relative z-10 flex flex-col items-center text-center group">
         <div className="w-16 h-16 rounded-2xl bg-[#131314] border border-white/10 flex items-center justify-center mb-6 group-hover:border-blue-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.5)] transition-all duration-300">
@@ -468,20 +429,6 @@ const FeatureCard = ({ icon, title, desc }: { icon: React.ReactNode, title: stri
         <p className="text-gray-400 text-sm leading-relaxed">
             {desc}
         </p>
-    </div>
-);
-
-const TestimonialCard = ({ quote, author, role }: { quote: string, author: string, role: string }) => (
-    <div className="p-8 rounded-2xl bg-[#131314] border border-white/5 relative">
-        <div className="text-blue-500 text-4xl font-serif absolute top-4 left-4 opacity-20">"</div>
-        <p className="text-gray-300 italic mb-6 relative z-10">"{quote}"</p>
-        <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-gray-700 to-gray-600"></div>
-            <div>
-                <div className="font-bold text-white text-sm">{author}</div>
-                <div className="text-xs text-gray-500">{role}</div>
-            </div>
-        </div>
     </div>
 );
 
