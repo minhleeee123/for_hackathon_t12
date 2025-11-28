@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { TransactionData } from '../types';
 import { sendTransaction } from '../services/web3Service';
-import { ArrowRight, Check, AlertCircle, Loader2, Wallet, Settings, RefreshCw } from 'lucide-react';
+import { ArrowRight, Check, AlertCircle, Loader2, Wallet, Settings } from 'lucide-react';
 
 interface Props {
   data: TransactionData;
@@ -73,19 +73,13 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
     setErrorMessage('');
     
     try {
-        // For now, we simulate SWAP as a generic transaction or log it, 
-        // since we don't have real DEX router contract ABI integration in this demo.
-        // We use the 'toAddress' for SEND, or a placeholder/router for SWAP.
-        
         let destination = toAddress;
         if (type === 'SWAP') {
-             // In a real app, this would be the Uniswap Router address
              destination = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; 
         }
 
         if (!destination) throw new Error("Destination address required");
 
-        // Pass the 'network' state to enforce switching
         const result = await sendTransaction(destination, amount, network);
         
         if (result && result.hash) {
@@ -103,19 +97,19 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
   };
 
   return (
-    <div className="w-full max-w-md bg-[#1e1f20] rounded-xl border border-white/10 overflow-hidden shadow-2xl mt-4">
+    <div className="w-full max-w-md bg-white dark:bg-[#1e1f20] rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl mt-4 transition-colors">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 p-4 border-b border-white/5 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/40 dark:to-purple-900/40 p-4 border-b border-gray-200 dark:border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-blue-400" />
+            <div className="w-8 h-8 rounded-full bg-blue-600/20 dark:bg-blue-500/20 flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-                <h3 className="font-bold text-white text-sm">Transaction Details</h3>
-                <p className="text-xs text-blue-300">Review & Edit</p>
+                <h3 className="font-bold text-gray-900 dark:text-white text-sm">Transaction Details</h3>
+                <p className="text-xs text-blue-600 dark:text-blue-300">Review & Edit</p>
             </div>
         </div>
-        <div className="px-2 py-1 rounded bg-white/5 text-[10px] font-bold text-gray-400 uppercase border border-white/5">
+        <div className="px-2 py-1 rounded bg-white/50 dark:bg-white/5 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase border border-gray-300 dark:border-white/5">
             {type}
         </div>
       </div>
@@ -125,12 +119,12 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
         {/* Network Selection - ONLY FOR SEND */}
         {type === 'SEND' && (
             <div className="space-y-1">
-                <label className="text-xs text-gray-400 font-medium ml-1">Network</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Network</label>
                 <div className="relative">
                     <select 
                         value={network}
                         onChange={(e) => setNetwork(e.target.value)}
-                        className="w-full bg-black/20 text-gray-200 text-sm rounded-lg p-2.5 border border-white/10 outline-none focus:border-blue-500/50 appearance-none"
+                        className="w-full bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-200 text-sm rounded-lg p-2.5 border border-gray-200 dark:border-white/10 outline-none focus:border-blue-500/50 appearance-none"
                     >
                         {NETWORKS.map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
@@ -142,23 +136,23 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
         {/* Amount & Token Input Row */}
         <div className="flex gap-3">
             <div className="flex-1 space-y-1">
-                <label className="text-xs text-gray-400 font-medium ml-1">Pay</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Pay</label>
                 <input 
                     type="number" 
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className={`w-full bg-black/20 text-white text-lg font-bold rounded-lg p-3 border outline-none transition-colors ${!amount ? 'border-yellow-500/50' : 'border-white/10 focus:border-blue-500/50'}`}
+                    className={`w-full bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-white text-lg font-bold rounded-lg p-3 border outline-none transition-colors ${!amount ? 'border-yellow-500/50' : 'border-gray-200 dark:border-white/10 focus:border-blue-500/50'}`}
                 />
             </div>
             <div className="w-1/3 space-y-1">
-                <label className="text-xs text-gray-400 font-medium ml-1">Token</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Token</label>
                 <input 
                     type="text" 
                     value={token}
                     onChange={(e) => setToken(e.target.value.toUpperCase())}
                     placeholder="ETH"
-                    className="w-full bg-black/20 text-white text-lg font-bold rounded-lg p-3 border border-white/10 outline-none focus:border-blue-500/50 uppercase text-center"
+                    className="w-full bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-white text-lg font-bold rounded-lg p-3 border border-gray-200 dark:border-white/10 outline-none focus:border-blue-500/50 uppercase text-center"
                 />
             </div>
         </div>
@@ -166,32 +160,32 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
         {/* Destination / Swap Target */}
         {type === 'SEND' ? (
              <div className="space-y-1">
-                <label className="text-xs text-gray-400 font-medium ml-1">Recipient Address</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Recipient Address</label>
                 <input 
                     type="text" 
                     value={toAddress}
                     onChange={(e) => setToAddress(e.target.value)}
                     placeholder="0x..."
-                    className={`w-full bg-black/20 text-sm font-mono text-blue-300 rounded-lg p-3 border outline-none transition-colors ${!toAddress ? 'border-yellow-500/50' : 'border-white/10 focus:border-blue-500/50'}`}
+                    className={`w-full bg-gray-50 dark:bg-black/20 text-sm font-mono text-blue-600 dark:text-blue-300 rounded-lg p-3 border outline-none transition-colors ${!toAddress ? 'border-yellow-500/50' : 'border-gray-200 dark:border-white/10 focus:border-blue-500/50'}`}
                 />
              </div>
         ) : (
             <>
                 <div className="flex justify-center -my-2">
-                    <div className="bg-[#1e1f20] p-1.5 rounded-full border border-white/10 z-10">
+                    <div className="bg-white dark:bg-[#1e1f20] p-1.5 rounded-full border border-gray-200 dark:border-white/10 z-10">
                         <ArrowRight className="w-4 h-4 text-gray-500 rotate-90" />
                     </div>
                 </div>
                 <div className="space-y-1">
-                    <label className="text-xs text-gray-400 font-medium ml-1">Receive (Estimated)</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Receive (Estimated)</label>
                     <div className="flex gap-3">
-                         <div className="flex-1 bg-black/20 rounded-lg p-3 border border-white/10 flex items-center justify-between">
+                         <div className="flex-1 bg-gray-50 dark:bg-black/20 rounded-lg p-3 border border-gray-200 dark:border-white/10 flex items-center justify-between">
                             {isCalculating ? (
                                 <span className="flex items-center gap-2 text-gray-500 text-sm">
                                     <Loader2 className="w-4 h-4 animate-spin" /> Calculating...
                                 </span>
                             ) : (
-                                <span className="text-lg font-bold text-gray-300">
+                                <span className="text-lg font-bold text-gray-900 dark:text-gray-300">
                                     {targetAmount || "0.00"}
                                 </span>
                             )}
@@ -201,7 +195,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
                             value={targetToken}
                             onChange={(e) => setTargetToken(e.target.value.toUpperCase())}
                             placeholder="USDT"
-                            className={`w-1/3 bg-black/20 text-white text-lg font-bold rounded-lg p-3 border outline-none uppercase text-center ${!targetToken ? 'border-yellow-500/50' : 'border-white/10 focus:border-blue-500/50'}`}
+                            className={`w-1/3 bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-white text-lg font-bold rounded-lg p-3 border outline-none uppercase text-center ${!targetToken ? 'border-yellow-500/50' : 'border-gray-200 dark:border-white/10 focus:border-blue-500/50'}`}
                          />
                     </div>
                 </div>
@@ -210,7 +204,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
 
         {/* Status Messages */}
         {status === 'success' && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2 text-green-400 text-xs break-all">
+            <div className="bg-green-100 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-lg p-3 flex items-start gap-2 text-green-700 dark:text-green-400 text-xs break-all">
                 <Check className="w-4 h-4 shrink-0 mt-0.5" />
                 <div>
                     <span className="font-bold block">Transaction Sent!</span>
@@ -220,7 +214,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
         )}
 
         {status === 'error' && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-2 text-red-400 text-xs">
+            <div className="bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg p-3 flex items-start gap-2 text-red-600 dark:text-red-400 text-xs">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div>
                     <span className="font-bold block">Failed</span>
@@ -236,9 +230,9 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
             className={`w-full py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2
                 ${isValid() 
                     ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 active:scale-95'
-                    : 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-200 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                 }
-                ${status === 'success' ? 'bg-green-600/20 text-green-400 !cursor-default' : ''}
+                ${status === 'success' ? 'bg-green-100 dark:bg-green-600/20 text-green-600 dark:text-green-400 !cursor-default' : ''}
             `}
         >
             {status === 'sending' ? (

@@ -1,19 +1,28 @@
+
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { ProjectMetric } from '../../types';
 
 interface ProjectScoreChartProps {
   data: ProjectMetric[];
+  theme?: 'light' | 'dark';
 }
 
-const ProjectScoreChart: React.FC<ProjectScoreChartProps> = ({ data }) => {
+const ProjectScoreChart: React.FC<ProjectScoreChartProps> = ({ data, theme = 'dark' }) => {
+  const isLight = theme === 'light';
+  const gridColor = isLight ? '#e5e7eb' : '#444';
+  const tickColor = isLight ? '#6b7280' : '#aaa';
+  const bgColor = isLight ? '#ffffff' : '#1e1f20';
+  const borderColor = isLight ? '#e5e7eb' : '#333';
+  const textColor = isLight ? '#1f2937' : '#fff';
+
   return (
-    <div className="w-full h-[300px] bg-gemini-surface rounded-xl p-4 border border-white/10">
-      <h3 className="text-sm font-medium text-gray-400 mb-2">Project Score</h3>
+    <div className="w-full h-[300px] bg-white dark:bg-[#1e1f20] rounded-xl p-4 border border-gray-200 dark:border-white/10 transition-colors">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Project Score</h3>
       <ResponsiveContainer width="100%" height="90%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid stroke="#444" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: '#aaa', fontSize: 10 }} />
+          <PolarGrid stroke={gridColor} />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: tickColor, fontSize: 10 }} />
           <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
           <Radar
             name="Score"
@@ -24,8 +33,8 @@ const ProjectScoreChart: React.FC<ProjectScoreChartProps> = ({ data }) => {
             fillOpacity={0.4}
           />
            <Tooltip 
-             contentStyle={{ backgroundColor: '#1e1f20', borderColor: '#333', color: '#fff' }}
-             itemStyle={{ color: '#fff' }}
+             contentStyle={{ backgroundColor: bgColor, borderColor: borderColor, color: textColor }}
+             itemStyle={{ color: textColor }}
           />
         </RadarChart>
       </ResponsiveContainer>

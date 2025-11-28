@@ -13,10 +13,9 @@ interface Props {
 }
 
 const CryptoDashboard: React.FC<Props> = ({ data }) => {
-  // Access theme via a simple check of document class or passed context. 
-  // Since we don't have global context, we check the DOM or default to dark.
-  // Ideally this should be passed as a prop, but for this specific component structure:
+  // Check theme from document class
   const isDark = document.documentElement.classList.contains('dark');
+  const theme = isDark ? 'dark' : 'light';
 
   return (
     <div className="w-full mt-4 space-y-6 animate-fade-in">
@@ -36,20 +35,18 @@ const CryptoDashboard: React.FC<Props> = ({ data }) => {
       {/* Top Row: Price & Sentiment */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
-          {/* Replaced AreaChart with TradingView Widget, passing Symbol */}
-          {/* PriceChart handles its own theme prop or defaults. We need to force update it when theme changes in App */}
-          <PriceChart symbol={data.symbol || "BTC"} theme={isDark ? 'dark' : 'light'} />
+          <PriceChart symbol={data.symbol || "BTC"} theme={theme} />
         </div>
         <div className="md:col-span-1">
-          <SentimentChart score={data.sentimentScore} />
+          <SentimentChart score={data.sentimentScore} theme={theme} />
         </div>
       </div>
 
       {/* Middle Row: Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <TokenomicsChart data={data.tokenomics} />
-        <ProjectScoreChart data={data.projectScores} />
-        <LongShortChart data={data.longShortRatio} />
+        <TokenomicsChart data={data.tokenomics} theme={theme} />
+        <ProjectScoreChart data={data.projectScores} theme={theme} />
+        <LongShortChart data={data.longShortRatio} theme={theme} />
       </div>
     </div>
   );
