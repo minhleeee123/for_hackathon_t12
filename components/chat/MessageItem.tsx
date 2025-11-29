@@ -9,9 +9,10 @@ import { FormattedMessage } from '../ui/MarkdownRenderer';
 
 interface MessageItemProps {
   msg: ChatMessage;
+  theme?: 'light' | 'dark';
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ msg }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ msg, theme = 'dark' }) => {
   return (
     <div className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
       
@@ -47,7 +48,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ msg }) => {
         
         {msg.data && (
           <div className="w-full mt-2">
-            <CryptoDashboard data={msg.data} />
+            <CryptoDashboard data={msg.data} theme={theme} />
           </div>
         )}
 

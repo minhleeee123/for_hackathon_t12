@@ -390,10 +390,10 @@ const App: React.FC = () => {
                 <div key={msg.id} className={msg.data && msg.data.symbol ? "mb-2" : ""}>
                     {/* Inject Theme prop into data components if needed (PriceChart) */}
                     {msg.data && (
-                        React.cloneElement(<MessageItem msg={{...msg, data: undefined}} />, {}, null) 
+                        React.cloneElement(<MessageItem msg={{...msg, data: undefined}} theme={theme} />, {}, null) 
                     ) /* Hack to render text part only via MessageItem, handled inside MessageItem properly */}
                     
-                    <MessageItem key={msg.id} msg={msg} />
+                    <MessageItem key={msg.id} msg={msg} theme={theme} />
                 </div>
               ))}
 

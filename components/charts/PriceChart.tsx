@@ -62,11 +62,15 @@ const PriceChart: React.FC<PriceChartProps> = ({ symbol, theme = 'dark' }) => {
 
   // Re-run widget when symbol or theme changes
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = () => loadWidget(containerId.current, false);
-    document.head.appendChild(script);
+    if (window.TradingView) {
+         loadWidget(containerId.current, false);
+    } else {
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/tv.js';
+        script.async = true;
+        script.onload = () => loadWidget(containerId.current, false);
+        document.head.appendChild(script);
+    }
   }, [symbol, theme]);
 
   // Effect for the modal chart

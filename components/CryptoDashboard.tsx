@@ -10,12 +10,13 @@ import { Sparkles } from 'lucide-react';
 
 interface Props {
   data: CryptoData;
+  theme?: 'light' | 'dark';
 }
 
-const CryptoDashboard: React.FC<Props> = ({ data }) => {
-  // Check theme from document class
-  const isDark = document.documentElement.classList.contains('dark');
-  const theme = isDark ? 'dark' : 'light';
+const CryptoDashboard: React.FC<Props> = ({ data, theme = 'dark' }) => {
+  // REMOVED: DOM check logic that caused the race condition/sync issue
+  // const isDark = document.documentElement.classList.contains('dark');
+  // const theme = isDark ? 'dark' : 'light';
 
   return (
     <div className="w-full mt-4 space-y-6 animate-fade-in">
