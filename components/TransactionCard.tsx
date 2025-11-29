@@ -8,7 +8,14 @@ interface Props {
   data: TransactionData;
 }
 
-const NETWORKS = ["Ethereum Mainnet", "Sepolia Testnet", "Binance Smart Chain", "Polygon", "Solana"];
+// Updated list to match Web3Service configs
+const NETWORKS = [
+    "Ethereum Mainnet", 
+    "Sepolia Testnet", 
+    "Binance Smart Chain", 
+    "Polygon", 
+    "Avalanche C-Chain"
+];
 
 const TransactionCard: React.FC<Props> = ({ data }) => {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -22,6 +29,9 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
   const [targetToken, setTargetToken] = useState<string>(data.targetToken || '');
   const [targetAmount, setTargetAmount] = useState<string>('');
   const [toAddress, setToAddress] = useState<string>(data.toAddress || '');
+  
+  // Initialize network with AI data, or default to ETH Mainnet. 
+  // Important: If AI says 'BSC', it should match one of the NETWORKS strings via agent logic.
   const [network, setNetwork] = useState<string>(data.network || 'Ethereum Mainnet');
   
   const [isCalculating, setIsCalculating] = useState(false);
@@ -63,8 +73,8 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
     if (type === 'SEND') {
         return isAmountValid && !!network && !!toAddress && !!token;
     } else {
-        // SWAP: Network is NOT required
-        return isAmountValid && !!token && !!targetToken;
+        // SWAP: Network IS required for execution context
+        return isAmountValid && !!token && !!targetToken && !!network;
     }
   };
 
@@ -75,6 +85,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
     try {
         let destination = toAddress;
         if (type === 'SWAP') {
+             // Mock Router Address for Swap
              destination = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; 
         }
 
@@ -116,22 +127,20 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
 
       <div className="p-5 space-y-5">
         
-        {/* Network Selection - ONLY FOR SEND */}
-        {type === 'SEND' && (
-            <div className="space-y-1">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Network</label>
-                <div className="relative">
-                    <select 
-                        value={network}
-                        onChange={(e) => setNetwork(e.target.value)}
-                        className="w-full bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-200 text-sm rounded-lg p-2.5 border border-gray-200 dark:border-white/10 outline-none focus:border-blue-500/50 appearance-none"
-                    >
-                        {NETWORKS.map(n => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                    <Settings className="w-4 h-4 text-gray-500 absolute right-3 top-2.5 pointer-events-none" />
-                </div>
+        {/* Network Selection - NOW VISIBLE FOR BOTH SEND AND SWAP */}
+        <div className="space-y-1">
+            <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Network</label>
+            <div className="relative">
+                <select 
+                    value={network}
+                    onChange={(e) => setNetwork(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-200 text-sm rounded-lg p-2.5 border border-gray-200 dark:border-white/10 outline-none focus:border-blue-500/50 appearance-none cursor-pointer hover:bg-gray-100 dark:hover:bg-black/40 transition-colors"
+                >
+                    {NETWORKS.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <Settings className="w-4 h-4 text-gray-500 absolute right-3 top-2.5 pointer-events-none" />
             </div>
-        )}
+        </div>
 
         {/* Amount & Token Input Row */}
         <div className="flex gap-3">
@@ -237,7 +246,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
         >
             {status === 'sending' ? (
                 <>
-                   <Loader2 className="w-4 h-4 animate-spin" /> Confirming in Wallet...
+                   <Loader2 className="w-4 h-4 animate-spin" /> Check Wallet...
                 </>
             ) : status === 'success' ? (
                 <>

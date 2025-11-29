@@ -12,13 +12,55 @@ export interface WalletInfo {
   balance: string; // ETH amount in string format
 }
 
-// Map Human-Readable names to EVM Chain IDs (Hex)
-const CHAIN_IDS: Record<string, string> = {
-  "Ethereum Mainnet": "0x1",
-  "Sepolia Testnet": "0xaa36a7",
-  "Binance Smart Chain": "0x38",
-  "Polygon": "0x89",
-  // Solana is not EVM compatible and cannot be switched via wallet_switchEthereumChain
+// Full Chain Configuration for Auto-Add Network
+interface ChainConfig {
+    chainId: string;
+    chainName: string;
+    rpcUrls: string[];
+    nativeCurrency: {
+        name: string;
+        symbol: string;
+        decimals: number;
+    };
+    blockExplorerUrls: string[];
+}
+
+const CHAIN_CONFIGS: Record<string, ChainConfig> = {
+  "Ethereum Mainnet": {
+      chainId: "0x1",
+      chainName: "Ethereum Mainnet",
+      rpcUrls: ["https://mainnet.infura.io/v3/"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      blockExplorerUrls: ["https://etherscan.io"]
+  },
+  "Sepolia Testnet": {
+      chainId: "0xaa36a7",
+      chainName: "Sepolia Testnet",
+      rpcUrls: ["https://rpc.sepolia.org"],
+      nativeCurrency: { name: "Sepolia Ether", symbol: "SEP", decimals: 18 },
+      blockExplorerUrls: ["https://sepolia.etherscan.io"]
+  },
+  "Binance Smart Chain": {
+      chainId: "0x38",
+      chainName: "Binance Smart Chain",
+      rpcUrls: ["https://bsc-dataseed.binance.org/"],
+      nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+      blockExplorerUrls: ["https://bscscan.com"]
+  },
+  "Polygon": {
+      chainId: "0x89",
+      chainName: "Polygon Mainnet",
+      rpcUrls: ["https://polygon-rpc.com/"],
+      nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+      blockExplorerUrls: ["https://polygonscan.com"]
+  },
+  "Avalanche C-Chain": {
+      chainId: "0xa86a",
+      chainName: "Avalanche C-Chain",
+      rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"],
+      nativeCurrency: { name: "AVAX", symbol: "AVAX", decimals: 18 },
+      blockExplorerUrls: ["https://snowtrace.io"]
+  }
 };
 
 export const connectToMetaMask = async (): Promise<WalletInfo | null> => {
@@ -70,39 +112,43 @@ export const sendTransaction = async (
     }
 
     try {
-        // 1. Switch Network if needed
-        if (networkName && CHAIN_IDS[networkName]) {
-            const targetChainId = CHAIN_IDS[networkName];
+        const provider = new ethers.BrowserProvider(window.ethereum);
+
+        // 1. Network Switching Logic
+        if (networkName && CHAIN_CONFIGS[networkName]) {
+            const targetConfig = CHAIN_CONFIGS[networkName];
+            
             try {
-                const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-                if (currentChainId !== targetChainId) {
-                    await window.ethereum.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: targetChainId }],
-                    });
-                }
+                // Try to switch to the chain
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: targetConfig.chainId }],
+                });
             } catch (switchError: any) {
-                // Error 4902 indicates the chain has not been added to MetaMask.
+                // Error 4902: Chain not found in MetaMask. We need to add it.
                 if (switchError.code === 4902) {
-                     throw new Error(`Network ${networkName} is not added to your wallet. Please add it manually.`);
-                }
-                // User rejected the switch
-                if (switchError.code === 4001) {
+                     try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [targetConfig],
+                        });
+                     } catch (addError) {
+                         throw new Error(`Failed to add network ${networkName} to MetaMask.`);
+                     }
+                } else if (switchError.code === 4001) {
                     throw new Error("User rejected network switch.");
+                } else {
+                    console.error("Failed to switch network:", switchError);
+                    throw new Error(`Failed to switch to ${networkName}.`);
                 }
-                console.error("Failed to switch network:", switchError);
-                throw new Error(`Failed to switch to ${networkName}.`);
             }
         } else if (networkName === "Solana") {
             throw new Error("Solana transactions are not supported by MetaMask. Please use an EVM network.");
         }
 
-        // 2. Initialize Provider (After potential network switch)
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        
-        // Ensure connected
+        // 2. Re-Initialize Provider (After network switch, the provider needs to be fresh)
+        // Note: ethers v6 usually handles this well, but ensuring connection is safe.
         await provider.send("eth_requestAccounts", []);
-        
         const signer = await provider.getSigner();
         
         // 3. Normalize Address
@@ -110,6 +156,7 @@ export const sendTransaction = async (
         try {
             formattedTo = ethers.getAddress(toAddress);
         } catch (e) {
+            // If it's a swap router address or generic hash, proceed with caution or validation
             try {
                 formattedTo = ethers.getAddress(toAddress.toLowerCase());
             } catch (e2) {
