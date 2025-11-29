@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
                 <span className="font-bold text-gray-300">CryptoInsight AI</span>
             </div>
             <div className="text-gray-500 text-sm">
-                &copy; 2024 CryptoInsight AI. Powered by Google Gemini.
+                &copy; 2025 CryptoInsight AI.
             </div>
             <div className="flex gap-6 text-gray-500">
                 <Globe className="w-5 h-5 hover:text-white cursor-pointer transition-colors" />

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BarChart3, Shield, Bot, Zap } from 'lucide-react';
 
@@ -33,7 +34,7 @@ const Features: React.FC = () => {
             <FeatureCard 
                 icon={<Bot className="w-6 h-6 text-purple-400" />}
                 title="Vision Agent"
-                desc="Upload or capture chart screenshots. The AI identifies patterns and support/resistance lines."
+                desc="Capture your marked-up charts. The AI interprets your lines and indicators to validate your strategy."
             />
              <FeatureCard 
                 icon={<Zap className="w-6 h-6 text-orange-400" />}

@@ -32,7 +32,7 @@ const FAQ: React.FC = () => {
             />
             <FAQItem 
                 q="Which chains do you support?" 
-                a="Currently we support Ethereum Mainnet, Binance Smart Chain, Polygon, and Sepolia Testnet for transactions. Analysis covers all coins on CoinGecko." 
+                a="Currently we support Ethereum Mainnet (ERC-20) via MetaMask wallet. Market analysis covers 10,000+ coins across all chains via CoinGecko." 
             />
             <FAQItem 
                 q="Is the AI analysis financial advice?" 

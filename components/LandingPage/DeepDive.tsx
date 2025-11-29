@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CheckCircle2, Activity, Wallet, ScanLine, Maximize, Bot, ArrowRight } from 'lucide-react';
 
@@ -85,7 +86,7 @@ const DeepDive: React.FC = () => {
                     <ul className="space-y-3 pt-4">
                         <CheckItem text="Real-time PNL Tracking" />
                         <CheckItem text="Risk Exposure Assessment" />
-                        <CheckItem text="Multi-Chain Wallet Support" />
+                        <CheckItem text="MetaMask Integration " />
                     </ul>
                 </div>
 
@@ -135,14 +136,14 @@ const DeepDive: React.FC = () => {
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase md:ml-auto">
                         Multimodal AI
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold">See the Market like a Pro</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold">Validate Your Technical Setup</h2>
                     <p className="text-gray-400 text-lg leading-relaxed">
-                        Don't just look at numbers. Upload screenshots of charts, and our Vision Agent will identify support/resistance lines, candlestick patterns, and potential breakout zones automatically.
+                        You act as the technician; the AI acts as the analyst. Draw your own support/resistance lines and indicators, then let our Vision Agent interpret your chart to confirm your bias and identify risks.
                     </p>
                     <ul className="space-y-3 pt-4 flex flex-col md:items-end">
-                        <CheckItem text="Pattern Recognition (Head & Shoulders, Flags)" />
-                        <CheckItem text="Auto-Support/Resistance Levels" />
-                        <CheckItem text="Actionable Trading Setups" />
+                        <CheckItem text="Analysis of Your Drawn Levels" />
+                        <CheckItem text="Indicator & Trend Validation" />
+                        <CheckItem text="Unbiased Second Opinion" />
                     </ul>
                 </div>
                 
