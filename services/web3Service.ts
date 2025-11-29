@@ -218,11 +218,15 @@ export const sendTransaction = async (
         } else {
             // --- ERC20 TOKEN TRANSACTION ---
             const chainTokens = TOKEN_ADDRESSES[networkName || "Ethereum Mainnet"];
-            const tokenAddr = chainTokens ? chainTokens[tokenSymbol!.toUpperCase()] : null;
+            const rawTokenAddr = chainTokens ? chainTokens[tokenSymbol!.toUpperCase()] : null;
 
-            if (!tokenAddr) {
+            if (!rawTokenAddr) {
                 throw new Error(`Token ${tokenSymbol} is not directly supported on ${networkName} yet. Please check the network or use the native coin.`);
             }
+
+            // FIX: Normalize address to prevent 'bad address checksum' error
+            // We force toLowerCase() then let ethers.getAddress() handle the checksum generation.
+            const tokenAddr = ethers.getAddress(rawTokenAddr.toLowerCase());
 
             const tokenContract = new ethers.Contract(tokenAddr, ERC20_ABI, signer);
             
@@ -235,6 +239,8 @@ export const sendTransaction = async (
             }
 
             const amountWei = ethers.parseUnits(sanitizedAmount, decimals);
+            
+            // Call transfer on the Token Contract
             const tx = await tokenContract.transfer(formattedTo, amountWei);
             return { hash: tx.hash };
         }
