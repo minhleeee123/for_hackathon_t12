@@ -63,6 +63,28 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
   }
 };
 
+const ERC20_ABI = [
+  "function transfer(address to, uint256 value) public returns (bool)",
+  "function decimals() view returns (uint8)"
+];
+
+// Map of common token addresses on different chains
+const TOKEN_ADDRESSES: Record<string, Record<string, string>> = {
+  "Binance Smart Chain": {
+    "ETH": "0x2170Ed081Fd40655d751827c5aF1d1Fe0E00f608", // Binance-Peg Ethereum Token
+    "USDT": "0x55d398326f99059fF775485246999027B3197955", // BSC-USD
+    "USDC": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"
+  },
+  "Ethereum Mainnet": {
+    "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  },
+  "Polygon": {
+      "USDT": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+      "WETH": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
+  }
+};
+
 export const connectToMetaMask = async (): Promise<WalletInfo | null> => {
   if (typeof window.ethereum === 'undefined') {
     alert("MetaMask is not installed! Please install it to use this feature.");
@@ -72,7 +94,7 @@ export const connectToMetaMask = async (): Promise<WalletInfo | null> => {
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
     
-    // ADDED: Force permission request to reset the connection context.
+    // Force permission request to reset the connection context.
     await provider.send("wallet_requestPermissions", [{ eth_accounts: {} }]);
 
     // Request account access
@@ -99,11 +121,12 @@ export const formatAddress = (address: string): string => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
-// Function to send a transaction with Network Switching support
+// Function to send a transaction with Network Switching & Token Support
 export const sendTransaction = async (
     toAddress: string, 
-    amountEth: string, 
-    networkName?: string
+    amount: string, 
+    networkName?: string,
+    tokenSymbol?: string
 ): Promise<{ hash: string } | null> => {
     
     if (typeof window.ethereum === 'undefined') {
@@ -119,13 +142,11 @@ export const sendTransaction = async (
             const targetConfig = CHAIN_CONFIGS[networkName];
             
             try {
-                // Try to switch to the chain
                 await window.ethereum.request({
                     method: 'wallet_switchEthereumChain',
                     params: [{ chainId: targetConfig.chainId }],
                 });
             } catch (switchError: any) {
-                // Error 4902: Chain not found in MetaMask. We need to add it.
                 if (switchError.code === 4902) {
                      try {
                         await window.ethereum.request({
@@ -142,12 +163,9 @@ export const sendTransaction = async (
                     throw new Error(`Failed to switch to ${networkName}.`);
                 }
             }
-        } else if (networkName === "Solana") {
-            throw new Error("Solana transactions are not supported by MetaMask. Please use an EVM network.");
         }
 
-        // 2. Re-Initialize Provider (After network switch, the provider needs to be fresh)
-        // Note: ethers v6 usually handles this well, but ensuring connection is safe.
+        // 2. Re-Initialize Provider
         await provider.send("eth_requestAccounts", []);
         const signer = await provider.getSigner();
         
@@ -156,35 +174,69 @@ export const sendTransaction = async (
         try {
             formattedTo = ethers.getAddress(toAddress);
         } catch (e) {
-            // If it's a swap router address or generic hash, proceed with caution or validation
-            try {
+             // Try lower case as fallback for some formats
+             try {
                 formattedTo = ethers.getAddress(toAddress.toLowerCase());
-            } catch (e2) {
+             } catch(e2) {
                 throw new Error(`Invalid recipient address: ${toAddress}`);
-            }
+             }
         }
 
-        // 4. Create transaction object
-        const tx: any = {
-            to: formattedTo,
-            value: ethers.parseEther(amountEth.toString())
-        };
+        // 4. Sanitize Amount (replace comma with dot for locales)
+        const sanitizedAmount = amount.replace(',', '.');
+        if (isNaN(parseFloat(sanitizedAmount))) {
+            throw new Error("Invalid amount format");
+        }
 
-        // 5. Send Transaction
-        try {
-            const response = await signer.sendTransaction(tx);
-            return { hash: response.hash };
-        } catch (error: any) {
-            const isInsufficientFunds = error.code === 'INSUFFICIENT_FUNDS';
-            const isGasEstimationFailed = error.info?.error?.code === -32000 || error.message?.includes("insufficient funds");
+        // 5. Check if Native vs Token
+        const config = networkName ? CHAIN_CONFIGS[networkName] : CHAIN_CONFIGS["Ethereum Mainnet"];
+        const isNative = !tokenSymbol || tokenSymbol.toUpperCase() === config.nativeCurrency.symbol.toUpperCase();
 
-            if (isInsufficientFunds || isGasEstimationFailed) {
-                console.warn("Gas estimation failed. Retrying with manual gasLimit...");
-                tx.gasLimit = 300000; 
+        if (isNative) {
+            // --- NATIVE TRANSACTION (ETH, BNB, MATIC) ---
+            const tx: any = {
+                to: formattedTo,
+                value: ethers.parseEther(sanitizedAmount)
+            };
+
+            try {
                 const response = await signer.sendTransaction(tx);
                 return { hash: response.hash };
+            } catch (error: any) {
+                const isInsufficientFunds = error.code === 'INSUFFICIENT_FUNDS';
+                const isGasEstimationFailed = error.info?.error?.code === -32000 || error.message?.includes("insufficient funds");
+
+                if (isInsufficientFunds || isGasEstimationFailed) {
+                    console.warn("Gas estimation failed. Retrying with manual gasLimit...");
+                    tx.gasLimit = 300000; 
+                    const response = await signer.sendTransaction(tx);
+                    return { hash: response.hash };
+                }
+                throw error;
             }
-            throw error;
+
+        } else {
+            // --- ERC20 TOKEN TRANSACTION ---
+            const chainTokens = TOKEN_ADDRESSES[networkName || "Ethereum Mainnet"];
+            const tokenAddr = chainTokens ? chainTokens[tokenSymbol!.toUpperCase()] : null;
+
+            if (!tokenAddr) {
+                throw new Error(`Token ${tokenSymbol} is not directly supported on ${networkName} yet. Please check the network or use the native coin.`);
+            }
+
+            const tokenContract = new ethers.Contract(tokenAddr, ERC20_ABI, signer);
+            
+            // Get decimals dynamically
+            let decimals = 18;
+            try {
+                decimals = await tokenContract.decimals();
+            } catch (e) {
+                console.warn("Could not fetch decimals, defaulting to 18");
+            }
+
+            const amountWei = ethers.parseUnits(sanitizedAmount, decimals);
+            const tx = await tokenContract.transfer(formattedTo, amountWei);
+            return { hash: tx.hash };
         }
 
     } catch (error) {
