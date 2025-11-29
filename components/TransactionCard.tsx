@@ -54,7 +54,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
             else if (pair === 'USDT-SOL') rate = 1 / 145;
             else rate = Math.random() * 2 + 0.5; // Random rate for unknown pairs
 
-            const val = parseFloat(amount.replace(',','.')) * rate;
+            const val = parseFloat(amount) * rate;
             // Format: Less decimals for USDT, more for tokens
             setTargetAmount(val < 1 ? val.toFixed(6) : val.toFixed(2));
             setIsCalculating(false);
@@ -68,7 +68,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
 
   // Form Validation
   const isValid = () => {
-    const isAmountValid = parseFloat(amount.replace(',','.')) > 0;
+    const isAmountValid = parseFloat(amount) > 0;
     
     if (type === 'SEND') {
         return isAmountValid && !!network && !!toAddress && !!token;
@@ -91,8 +91,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
 
         if (!destination) throw new Error("Destination address required");
 
-        // Pass 'token' to enable proper Token vs Native detection
-        const result = await sendTransaction(destination, amount, network, token);
+        const result = await sendTransaction(destination, amount, network);
         
         if (result && result.hash) {
             setTxHash(result.hash);
@@ -148,7 +147,7 @@ const TransactionCard: React.FC<Props> = ({ data }) => {
             <div className="flex-1 space-y-1">
                 <label className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-1">Pay</label>
                 <input 
-                    type="text" 
+                    type="number" 
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
