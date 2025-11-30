@@ -376,13 +376,9 @@ app.use(cors({
 - REST API communication with backend
 - All agent endpoint integrations
 
-**Binance Service (binanceService.ts)**:
+**Binance Service (binanceService.ts)** (In Development):
 - Direct Binance API integration
 - Order book and market data
-
-**Gemini Service (geminiService.ts)**:
-- Direct Gemini API client
-- Image analysis capabilities
 
 **Web3 Service (web3Service.ts)**:
 - Wallet connection (MetaMask, etc.)
