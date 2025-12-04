@@ -497,11 +497,13 @@ try {
 
 ---
 
-### AI Agent System
+### AI Agent System Architecture
 
 <div align="center">
 
-```mermaid
+#### Agent Flow Diagram
+
+```
 graph LR
     A[User Request] --> B[Chat Agent]
     B --> C{Intent Classification}
@@ -514,6 +516,71 @@ graph LR
     E --> J[Portfolio Analysis]
     F --> K[Transaction Preview]
     G --> L[Chart Analysis]
+```
+
+#### Detailed System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          FRONTEND (React 19 + Vite)                 │
+│  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐             │
+│  │ Landing Page│  │  Dashboard   │  │  Chat UI      │             │
+│  └──────┬──────┘  └──────┬───────┘  └───────┬───────┘             │
+│         │                 │                   │                      │
+└─────────┼─────────────────┼───────────────────┼──────────────────────┘
+          │                 │                   │
+          └─────────────────┼───────────────────┘
+                            │ HTTP/REST
+┌───────────────────────────▼────────────────────────────────────────┐
+│                    EXPRESS SERVER (Port 3001)                      │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │                  API ENDPOINTS                            │    │
+│  │  POST /api/analyze-coin                                   │    │
+│  │  POST /api/market-report                                  │    │
+│  │  POST /api/determine-intent                               │    │
+│  │  POST /api/chat                                           │    │
+│  │  POST /api/analyze-portfolio                              │    │
+│  │  POST /api/update-portfolio                               │    │
+│  │  POST /api/transaction-preview                            │    │
+│  │  POST /api/analyze-chart                                  │    │
+│  └────────────────────┬─────────────────────────────────────┘    │
+│                       │                                            │
+│  ┌────────────────────▼────────────────────────────────────┐     │
+│  │            IQ ADK AGENT ORCHESTRATOR                     │     │
+│  │  ┌────────────┐  ┌────────────┐  ┌─────────────┐       │     │
+│  │  │   Chat     │  │   Market   │  │  Portfolio  │       │     │
+│  │  │   Agent    │  │   Agent    │  │   Agent     │       │     │
+│  │  └─────┬──────┘  └─────┬──────┘  └──────┬──────┘       │     │
+│  │  ┌─────┴──────┐  ┌─────┴──────┐                         │     │
+│  │  │Transaction │  │   Vision   │                         │     │
+│  │  │   Agent    │  │   Agent    │                         │     │
+│  │  └─────┬──────┘  └─────┬──────┘                         │     │
+│  └────────┼────────────────┼─────────────────────────────────┘   │
+│           │                │                                      │
+│  ┌────────▼────────────────▼─────────────────────────────────┐   │
+│  │              UTILITY LAYER                                 │   │
+│  │  ┌────────────┐  ┌────────────┐  ┌──────────────┐        │   │
+│  │  │ Callbacks  │  │   Cache    │  │SessionStore  │        │   │
+│  │  │  System    │  │  Manager   │  │   (Multi-   │        │   │
+│  │  │            │  │            │  │    user)     │        │   │
+│  │  └────────────┘  └────────────┘  └──────────────┘        │   │
+│  └────────────────────────────────────────────────────────────┘   │
+│                                                                    │
+└────────────────────────────┬───────────────────────────────────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          │                  │                  │
+┌─────────▼──────┐  ┌────────▼────────┐  ┌─────▼────────┐
+│  Google Gemini │  │  External APIs  │  │  Zod Schema  │
+│  2.5 Flash     │  │                 │  │  Validation  │
+│  (via IQ ADK)  │  │  • CoinGecko    │  │              │
+│                │  │  • Binance      │  │ cryptoData   │
+│  • Text Gen    │  │  • Alternative  │  │ portfolio    │
+│  • Vision      │  │    .me          │  │ transaction  │
+│  • Structured  │  │                 │  │ intent       │
+│    Output      │  │                 │  │              │
+└────────────────┘  └─────────────────┘  └──────────────┘
 ```
 
 </div>
