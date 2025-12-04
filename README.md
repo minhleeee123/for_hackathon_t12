@@ -503,7 +503,7 @@ try {
 
 #### Agent Flow Diagram
 
-```
+```mermaid
 graph LR
     A[User Request] --> B[Chat Agent]
     B --> C{Intent Classification}
@@ -520,67 +520,85 @@ graph LR
 
 #### Detailed System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          FRONTEND (React 19 + Vite)                 │
-│  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐             │
-│  │ Landing Page│  │  Dashboard   │  │  Chat UI      │             │
-│  └──────┬──────┘  └──────┬───────┘  └───────┬───────┘             │
-│         │                 │                   │                      │
-└─────────┼─────────────────┼───────────────────┼──────────────────────┘
-          │                 │                   │
-          └─────────────────┼───────────────────┘
-                            │ HTTP/REST
-┌───────────────────────────▼────────────────────────────────────────┐
-│                    EXPRESS SERVER (Port 3001)                      │
-│                                                                     │
-│  ┌──────────────────────────────────────────────────────────┐    │
-│  │                  API ENDPOINTS                            │    │
-│  │  POST /api/analyze-coin                                   │    │
-│  │  POST /api/market-report                                  │    │
-│  │  POST /api/determine-intent                               │    │
-│  │  POST /api/chat                                           │    │
-│  │  POST /api/analyze-portfolio                              │    │
-│  │  POST /api/update-portfolio                               │    │
-│  │  POST /api/transaction-preview                            │    │
-│  │  POST /api/analyze-chart                                  │    │
-│  └────────────────────┬─────────────────────────────────────┘    │
-│                       │                                            │
-│  ┌────────────────────▼────────────────────────────────────┐     │
-│  │            IQ ADK AGENT ORCHESTRATOR                     │     │
-│  │  ┌────────────┐  ┌────────────┐  ┌─────────────┐       │     │
-│  │  │   Chat     │  │   Market   │  │  Portfolio  │       │     │
-│  │  │   Agent    │  │   Agent    │  │   Agent     │       │     │
-│  │  └─────┬──────┘  └─────┬──────┘  └──────┬──────┘       │     │
-│  │  ┌─────┴──────┐  ┌─────┴──────┐                         │     │
-│  │  │Transaction │  │   Vision   │                         │     │
-│  │  │   Agent    │  │   Agent    │                         │     │
-│  │  └─────┬──────┘  └─────┬──────┘                         │     │
-│  └────────┼────────────────┼─────────────────────────────────┘   │
-│           │                │                                      │
-│  ┌────────▼────────────────▼─────────────────────────────────┐   │
-│  │              UTILITY LAYER                                 │   │
-│  │  ┌────────────┐  ┌────────────┐  ┌──────────────┐        │   │
-│  │  │ Callbacks  │  │   Cache    │  │SessionStore  │        │   │
-│  │  │  System    │  │  Manager   │  │   (Multi-   │        │   │
-│  │  │            │  │            │  │    user)     │        │   │
-│  │  └────────────┘  └────────────┘  └──────────────┘        │   │
-│  └────────────────────────────────────────────────────────────┘   │
-│                                                                    │
-└────────────────────────────┬───────────────────────────────────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-┌─────────▼──────┐  ┌────────▼────────┐  ┌─────▼────────┐
-│  Google Gemini │  │  External APIs  │  │  Zod Schema  │
-│  2.5 Flash     │  │                 │  │  Validation  │
-│  (via IQ ADK)  │  │  • CoinGecko    │  │              │
-│                │  │  • Binance      │  │ cryptoData   │
-│  • Text Gen    │  │  • Alternative  │  │ portfolio    │
-│  • Vision      │  │    .me          │  │ transaction  │
-│  • Structured  │  │                 │  │ intent       │
-│    Output      │  │                 │  │              │
-└────────────────┘  └─────────────────┘  └──────────────┘
+```mermaid
+graph TB
+    subgraph Frontend["FRONTEND (React 19 + Vite)"]
+        LP[Landing Page]
+        DB[Dashboard]
+        CH[Chat UI]
+        PF[Portfolio View]
+    end
+    
+    subgraph Backend["EXPRESS SERVER :3001"]
+        API[API Routes]
+        
+        subgraph Agents["IQ ADK Agent Orchestrator"]
+            CA[Chat Agent<br/>Intent Classification]
+            MA[Market Agent<br/>Crypto Analysis]
+            PA[Portfolio Agent<br/>Asset Management]
+            TA[Transaction Agent<br/>Web3 Parsing]
+            VA[Vision Agent<br/>Chart Analysis]
+        end
+        
+        subgraph Utils["Utility Layer"]
+            CB[Callbacks System<br/>Monitoring]
+            CM[Cache Manager<br/>In-Memory]
+            SS[Session Store<br/>Multi-User]
+        end
+    end
+    
+    subgraph External["External Services"]
+        GM[Google Gemini 2.5<br/>via IQ ADK]
+        CG[CoinGecko API<br/>Price Data]
+        BN[Binance API<br/>Long/Short]
+        AL[Alternative.me<br/>Fear & Greed]
+        ZD[Zod Schemas<br/>Validation]
+    end
+    
+    LP --> API
+    DB --> API
+    CH --> API
+    PF --> API
+    
+    API --> CA
+    API --> MA
+    API --> PA
+    API --> TA
+    API --> VA
+    
+    CA --> CB
+    MA --> CB
+    PA --> CB
+    TA --> CB
+    VA --> CB
+    
+    CA --> CM
+    MA --> CM
+    PA --> CM
+    
+    CA --> SS
+    
+    CA --> GM
+    MA --> GM
+    PA --> GM
+    TA --> GM
+    VA --> GM
+    
+    MA --> CG
+    MA --> BN
+    MA --> AL
+    PA --> CG
+    
+    MA --> ZD
+    PA --> ZD
+    TA --> ZD
+    CA --> ZD
+    
+    style Frontend fill:#1e3a8a
+    style Backend fill:#166534
+    style Agents fill:#7c2d12
+    style Utils fill:#78350f
+    style External fill:#4c1d95
 ```
 
 </div>
